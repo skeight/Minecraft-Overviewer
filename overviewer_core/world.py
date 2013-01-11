@@ -316,7 +316,11 @@ class RegionSet(object):
         chunk file, with a few changes:
 
         * The Biomes array is transformed into a 16x16 numpy array
-
+        
+        * The "TileEntities" is left as a list of dictionaries.  I can't seem to
+          see a way that this could be transformed into a numpy array with all
+          the multiple data types and varying formats for each block
+        
         * For each chunk section:
 
           * The "Blocks" byte string is transformed into a 16x16x16 numpy array
@@ -327,7 +331,7 @@ class RegionSet(object):
           * The "BlockLight" byte string is transformed into a 16x16x128 numpy
             array
           * The "Data" byte string is transformed into a 16x16x128 numpy array
-
+          
         Warning: the returned data may be cached and thus should not be
         modified, lest it affect the return values of future calls for the same
         chunk.
@@ -387,7 +391,7 @@ class RegionSet(object):
             # worlds converted by Jeb's program may be missing the Biomes key
             biomes = numpy.zeros((16, 16), dtype=numpy.uint8)
         chunk_data['Biomes'] = biomes
-
+            
         for section in chunk_data['Sections']:
 
             # Turn the Blocks array into a 16x16x16 numpy matrix of shorts,
@@ -602,6 +606,7 @@ class RotatedRegionSet(RegionSetWrapper):
         biomes = numpy.swapaxes(chunk_data['Biomes'], 0, 1)
         biomes = numpy.rot90(biomes, self.north_dir)
         chunk_data['Biomes'] = numpy.swapaxes(biomes, 0, 1)
+        
         return chunk_data
 
     def get_chunk_mtime(self, x, z):

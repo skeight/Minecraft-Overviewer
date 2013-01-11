@@ -82,6 +82,8 @@ typedef struct {
     int loaded;
     /* chunk biome array */
     PyObject *biomes;
+    /* chunk tileentities array */
+    PyObject *tileentities;    
     /* all the sections in a given chunk */
     struct {
         /* all there is to know about each section */
@@ -156,12 +158,18 @@ typedef enum
     BLOCKLIGHT,
     SKYLIGHT,
     BIOMES,
+    TILEENTITIES,
 } DataType;
 static inline unsigned int get_data(RenderState *state, DataType type, int x, int y, int z)
-{
+{    
     int chunkx = 1, chunky = state->chunky, chunkz = 1;
+    int calcy = 0, calcz = 0, calcx = 0;
     PyObject *data_array = NULL;
+    PyObject *data_dict = NULL;
     unsigned int def = 0;
+    unsigned int ret = 0;
+    unsigned int i = 0;
+ 
     if (type == SKYLIGHT)
         def = 15;
     
@@ -213,6 +221,55 @@ static inline unsigned int get_data(RenderState *state, DataType type, int x, in
         break;
     case BIOMES:
         data_array = state->chunks[chunkx][chunkz].biomes;
+        break;
+    case TILEENTITIES:
+        /*
+        TileEntities are received as a list of dictionaries
+        I'm going to loop through them here and see if we have
+        a match for x,y,z and return that PyDict back to
+        iterate.c
+        */
+        data_array = state->chunks[chunkx][chunkz].tileentities;
+        
+        if(PyList_Check(data_array)) {
+            for(i=0; i < PyList_Size(data_array); i++) {
+                data_dict = PyList_GetItem(data_array,i);
+                if(PyDict_Check(data_dict)) {
+                    // match the state YZX to tileentities YZX
+                    // We receive global coordinates from the tileentities and they
+                    // have not been "rotated".  Adjust the calculations here
+                    // to match our rotated info with global (in-game) YZX
+                    calcy = state->chunky * 16 + state->y;
+                    if(PyObject_HasAttrString(state->regionset,"north_dir")) {
+                        if(PyInt_AsLong(PyObject_GetAttrString(state->regionset,"north_dir")) == 1) { // UPPER-RIGHT
+                            calcx = (state->chunkz*16) + (state->z);
+                            calcz = (state->chunkx*16)*-1 + (15-state->x);
+                        } else if(PyInt_AsLong(PyObject_GetAttrString(state->regionset,"north_dir")) == 2) { // LOWER-LEFT
+                            calcx = (state->chunkx*16)*-1 + (15-state->x);
+                            calcz = (state->chunkz*16)*-1 + (15-state->z);
+                        } else if(PyInt_AsLong(PyObject_GetAttrString(state->regionset,"north_dir")) == 3) { // LOWER-RIGHT
+                            calcx = (state->chunkz*16)*-1 + (15-state->z);
+                            calcz = (state->chunkx*16) + (state->x);
+                        }
+                    } else { // UPPER-LEFT (Default)
+                        calcx = (state->chunkx*16) + (state->x);
+                        calcz = (state->chunkz*16) + (state->z);
+                    }
+
+                    if(calcx == PyInt_AsLong(PyDict_GetItemString(data_dict,"x")) && calcy == PyInt_AsLong(PyDict_GetItemString(data_dict,"y")) && calcz == PyInt_AsLong(PyDict_GetItemString(data_dict,"z")) ) {
+                        // The item matches the location, pack your data appropriately
+                        // for the type of block you're working with
+                        if(state->block == 144) {
+                            // found the right one! yay :D - pack the skull type and rotation
+                            ret = PyInt_AsLong(PyDict_GetItemString(data_dict,"SkullType"));
+                            ret = (ret << 4) | PyInt_AsLong(PyDict_GetItemString(data_dict,"Rot"));
+                        }
+
+                        break;
+                    }                     
+                }              
+            }
+        }
     };
     
     if (data_array == NULL)
@@ -222,6 +279,9 @@ static inline unsigned int get_data(RenderState *state, DataType type, int x, in
         return getArrayShort3D(data_array, x, y, z);
     if (type == BIOMES)
         return getArrayByte2D(data_array, x, z);
+    if (type == TILEENTITIES)
+        return ret;
+    
     return getArrayByte3D(data_array, x, y, z);
 }
 

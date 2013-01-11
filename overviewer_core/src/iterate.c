@@ -131,6 +131,7 @@ int load_chunk(RenderState* state, int x, int z, unsigned char required) {
     
     /* set up reasonable defaults */
     dest->biomes = NULL;
+    dest->tileentities = NULL;
     for (i = 0; i < SECTIONS_PER_CHUNK; i++)
     {
         dest->sections[i].blocks = NULL;
@@ -169,6 +170,9 @@ int load_chunk(RenderState* state, int x, int z, unsigned char required) {
     dest->biomes = PyDict_GetItemString(chunk, "Biomes");
     Py_INCREF(dest->biomes);
     
+    dest->tileentities = PyDict_GetItemString(chunk, "TileEntities");
+    Py_INCREF(dest->tileentities);
+    
     for (i = 0; i < PySequence_Fast_GET_SIZE(sections); i++) {
         PyObject *ycoord = NULL;
         int sectiony = 0;
@@ -195,6 +199,7 @@ unload_all_chunks(RenderState *state) {
         for (j = 0; j < 3; j++) {
             if (state->chunks[i][j].loaded) {
                 Py_XDECREF(state->chunks[i][j].biomes);
+                Py_XDECREF(state->chunks[i][j].tileentities);
                 for (k = 0; k < SECTIONS_PER_CHUNK; k++) {
                     Py_XDECREF(state->chunks[i][j].sections[k].blocks);
                     Py_XDECREF(state->chunks[i][j].sections[k].data);
@@ -402,6 +407,24 @@ generate_pseudo_data(RenderState *state, unsigned char ancilData) {
         } else {
             return check_adjacent_blocks(state, x, y, z, state->block);
         }
+    } else if (state->block == 144) { /* skulls */
+        data = get_data(state, TILEENTITIES, x, y, z);
+
+        //ancilData values
+        //0x1: On the floor (rotation is stored in the tile entity)
+        //0x2: On a wall, facing north    0x3: On a wall, facing south
+        //0x4: On a wall, facing east     0x5: On a wall, facing west
+        if(ancilData == 1) { // on the floor
+            return data;
+        } else if(ancilData == 2) { // wall: north
+            return data;
+        } else if(ancilData == 4) { // wall: east
+            return data | 0xC;
+        } else if(ancilData == 5) { // wall: west
+            return data | 0x4; 
+        } else { // wall: south
+            return data | 0x8;
+        }
     }
 
 
@@ -499,7 +522,6 @@ chunk_render(PyObject *self, PyObject *args) {
     
     for (state.x = 15; state.x > -1; state.x--) {
         for (state.z = 0; state.z < 16; state.z++) {
-
             /* set up the render coordinates */
             state.imgx = xoff + state.x*12 + state.z*12;
             /* 16*12 -- offset for y direction, 15*6 -- offset for x */
@@ -542,14 +564,16 @@ chunk_render(PyObject *self, PyObject *args) {
                     state.block_data = ancilData;
                     /* block that need pseudo ancildata:
                      * grass, water, glass, chest, restone wire,
-                     * ice, fence, portal, iron bars, glass panes */
+                     * ice, fence, portal, iron bars, glass panes,
+                     * skulls */
                     if ((state.block ==  2) || (state.block ==  9) ||
                         (state.block == 20) || (state.block == 54) ||
                         (state.block == 55) || (state.block == 64) ||
                         (state.block == 71) || (state.block == 79) ||
                         (state.block == 85) || (state.block == 90) ||
                         (state.block == 101) || (state.block == 102) ||
-                        (state.block == 113) || (state.block == 139)) {
+                        (state.block == 113) || (state.block == 139) ||
+                        (state.block == 144)) {
                         ancilData = generate_pseudo_data(&state, ancilData);
                         state.block_pdata = ancilData;
                     } else {
@@ -566,6 +590,7 @@ chunk_render(PyObject *self, PyObject *args) {
                 /* if we don't get a texture, try it again with 0 data */
                 if ((t == NULL || t == Py_None) && ancilData != 0)
                     t = PyList_GET_ITEM(blockmap, max_data * state.block);
+                
                 
                 /* if we found a proper texture, render it! */
                 if (t != NULL && t != Py_None)
@@ -588,7 +613,6 @@ chunk_render(PyObject *self, PyObject *args) {
                     }
                     
                     render_mode_draw(rendermode, src, mask, mask_light);
-                    
                     if (state.block == 31) {
                         /* undo the random offsets */
                         state.imgx -= randx;

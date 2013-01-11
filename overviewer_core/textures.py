@@ -347,7 +347,7 @@ class Textures(object):
     ##
 
     @staticmethod
-    def transform_image_top(img):
+    def transform_image_top(img,rotate=1):
         """Takes a PIL image and rotates it left 45 degrees and shrinks the y axis
         by a factor of 2. Returns the resulting image, which will be 24x12 pixels
 
@@ -359,14 +359,17 @@ class Textures(object):
 
         # Build the Affine transformation matrix for this perspective
         transform = numpy.matrix(numpy.identity(3))
-        # Translate up and left, since rotations are about the origin
-        transform *= numpy.matrix([[1,0,8.5],[0,1,8.5],[0,0,1]])
-        # Rotate 45 degrees
-        ratio = math.cos(math.pi/4)
-        #transform *= numpy.matrix("[0.707,-0.707,0;0.707,0.707,0;0,0,1]")
-        transform *= numpy.matrix([[ratio,-ratio,0],[ratio,ratio,0],[0,0,1]])
-        # Translate back down and right
-        transform *= numpy.matrix([[1,0,-12],[0,1,-12],[0,0,1]])
+        
+        if rotate:
+            # Translate up and left, since rotations are about the origin
+            transform *= numpy.matrix([[1,0,8.5],[0,1,8.5],[0,0,1]])
+            # Rotate 45 degrees
+            ratio = math.cos(math.pi/4)
+            #transform *= numpy.matrix("[0.707,-0.707,0;0.707,0.707,0;0,0,1]")
+            transform *= numpy.matrix([[ratio,-ratio,0],[ratio,ratio,0],[0,0,1]])
+            # Translate back down and right
+            transform *= numpy.matrix([[1,0,-12],[0,1,-12],[0,0,1]])
+            
         # scale the image down by a factor of 2
         transform *= numpy.matrix("[1,0,0;0,2,0;0,0,1]")
 
@@ -450,7 +453,6 @@ class Textures(object):
 
         return newimg
 
-
     def build_block(self, top, side):
         """From a top texture and a side texture, build a block image.
         top and side should be 16x16 image objects. Returns a 24x24 image
@@ -490,6 +492,36 @@ class Textures(object):
         for x,y in [(3,4), (7,2), (11,0)]:
             # Copy a pixel to x,y from x+1,y
             img.putpixel((x,y), img.getpixel((x+1,y)))
+
+        return img
+
+    def build_straight_block(self, top, side):
+        """From a top texture and a side texture, build a block image
+        that hasn't been rotated.  This is to allow for blocks that are
+        rotated 45 degrees in game (ie. skulls)
+        """
+        img = Image.new("RGBA", (24,24), self.bgcolor)
+
+        #original_texture = top.copy()
+        top = self.transform_image_top(top,0)
+
+        if not side:
+            alpha_over(img, top, (0,0), top)
+            return img
+
+        side = side.resize((17,15), Image.ANTIALIAS)
+
+        # Darken the front quite a bit.  This helps with the illusion
+        # on such a "head-on block"
+        # These methods also affect the alpha layer,
+        # so save them first (we don't want to "darken" the alpha layer making
+        # the block transparent)
+        sidealpha = side.split()[3]
+        side = ImageEnhance.Brightness(side).enhance(0.65)
+        side.putalpha(sidealpha)
+
+        alpha_over(img, top, (0,0), top)
+        alpha_over(img, side, (0,6), side)
 
         return img
 
@@ -3426,7 +3458,7 @@ def end_portal(self, blockid, data):
     return img
 
 # end portal frame
-@material(blockid=120, data=range(5), transparent=True)
+@material(blockid=120, data=range(8), transparent=True)
 def end_portal_frame(self, blockid, data):
     # The bottom 2 bits are oritation info but seems there is no
     # graphical difference between orientations
@@ -3860,3 +3892,82 @@ def anvil(self, blockid, data):
     alpha_over(img, right_side, right_pos, right_side)
     
     return img
+
+#skulls
+@material(blockid=144, data=range(128), transparent=True, solid=True, nospawn=True)
+def skull(self, blockid, data):
+    type = data >> 4;
+    rotation = data & 0x0F;
+    
+    if type == 0: t = self.load_image("skeleton.png")
+    elif type == 1: t = self.load_image("skeleton_wither.png")
+    elif type == 2: t = self.load_image("zombie.png")
+    elif type == 4: t = self.load_image("creeper.png")
+    else: t = self.load_image("char.png") #appropriate default?
+
+    # rotations
+    if self.rotation == 1: # north top-right
+        rotation = (rotation + 4) % 16
+    elif self.rotation == 2: # north bottom-right
+        rotation = (rotation + 8) % 16
+    elif self.rotation == 3: # north bottom-left
+        rotation = (rotation + 12) % 16
+
+    #grab the sides we need from the texture
+    top = t.crop((8,0,16,8))
+    top.load()
+    front = t.crop((8,8,16,16))
+    front.load()
+    back = t.crop((24,8,32,16))
+    back.load()
+    side_l = t.crop((0,8,8,16))
+    side_l.load()
+    side_r = t.crop((16,8,24,16))
+    side_r.load()
+    
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+
+    #build the skull based on rotation
+    if rotation == 0: #south
+        skull = self.build_full_block(top,front,side_l,side_r,back); 
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (4,5), skull)
+    elif rotation == 4: #west
+        skull = self.build_full_block(top,side_l,front,back,side_r); 
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (4,5), skull)
+    elif rotation == 8: #north
+        skull = self.build_full_block(top,back,side_r,side_l,front); 
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (4,5), skull)
+    elif rotation == 12:
+        skull = self.build_full_block(top,side_r,back,front,side_l);
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (4,5), skull)
+    elif rotation == 9 or rotation == 10 or rotation == 11: 
+        skull = self.build_straight_block(top,front);
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (6,5), skull)
+    elif rotation == 13 or rotation == 14 or rotation == 15:
+        skull = self.build_straight_block(top,side_r);
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (6,5), skull)        
+    elif rotation == 1 or rotation == 2 or rotation == 3: #west
+        skull = self.build_straight_block(top,back);
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (6,5), skull)        
+    elif rotation == 5 or rotation == 6 or rotation == 7: #west
+        skull = self.build_straight_block(top,side_l);
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (6,5), skull)        
+    else:
+        skull = self.build_full_block(top,back,side_r,side_l,front); 
+        skull = skull.resize((16,16),Image.ANTIALIAS)
+        alpha_over(img, skull, (4,5), skull)
+        
+    # increase brightness on zombie and wither - seemed dark
+    if type == 1 or type == 2:
+        img = ImageEnhance.Brightness(img).enhance(1.2)
+
+    return img
+
