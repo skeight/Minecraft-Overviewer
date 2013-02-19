@@ -29,11 +29,6 @@ import functools
 import util
 from c_overviewer import alpha_over
 
-class TextureException(Exception):
-    "To be thrown when a texture is not found."
-    pass
-
-
 ##
 ## Textures object
 ##
@@ -136,7 +131,7 @@ class Textures(object):
 
         # a list of subdirectories to search for a given file,
         # after the obvious '.'
-        search_dirs = ['anim', 'misc', 'environment', 'item']
+        search_dirs = ['anim', 'misc', 'environment']
         search_zip_paths = [filename,] + [d + '/' + filename for d in search_dirs]
         def search_dir(base):
             """Search the given base dir for filename, in search_dirs."""
@@ -218,7 +213,7 @@ class Textures(object):
                 if verbose: logging.info("Found %s in '%s'", filename, path)
                 return open(path, mode)
 
-        raise TextureException("Could not find the file `{0}'. Try specifying the 'texturepath' option in your config file. Set it to the directory where I can find {0}. Also see <http://docs.overviewer.org/en/latest/running/#installing-the-textures>".format(filename))
+        raise IOError("Could not find the file `{0}'. Try specifying the 'texturepath' option in your config file. Set it to the directory where I can find {0}.".format(filename))
 
     def load_image(self, filename):
         """Returns an image object"""
@@ -236,7 +231,7 @@ class Textures(object):
             # try the MCPatcher case first
             watertexture = self.load_image("custom_water_still.png")
             watertexture = watertexture.crop((0, 0, watertexture.size[0], watertexture.size[0]))
-        except TextureException:
+        except IOError:
             watertexture = self.load_image("water.png")
         self.watertexture = watertexture
         return watertexture
@@ -251,7 +246,7 @@ class Textures(object):
             # try the MCPatcher lava first, in case it's present
             lavatexture = self.load_image("custom_lava_still.png")
             lavatexture = lavatexture.crop((0, 0, lavatexture.size[0], lavatexture.size[0]))
-        except TextureException:
+        except IOError:
             lavatexture = self.load_image("lava.png")
         self.lavatexture = lavatexture
         return lavatexture
@@ -269,7 +264,7 @@ class Textures(object):
             firetextureEW = self.load_image("custom_fire_e_w.png")
             firetextureEW = firetextureEW.crop((0, 0, firetextureEW.size[0], firetextureEW.size[0]))
             firetexture = (firetextureNS,firetextureEW)
-        except TextureException:
+        except IOError:
             fire = self.load_image("fire.png")
             firetexture = (fire, fire)
         self.firetexture = firetexture
@@ -285,7 +280,7 @@ class Textures(object):
             # try the MCPatcher case first
             portaltexture = self.load_image("custom_portal.png")
             portaltexture = portaltexture.crop((0, 0, portaltexture.size[0], portaltexture.size[1]))
-        except TextureException:
+        except IOError:
             portaltexture = self.load_image("portal.png")
         self.portaltexture = portaltexture
         return portaltexture
@@ -777,7 +772,8 @@ def wooden_planks(self, blockid, data):
     if data == 3: # jungle wood
         return self.build_block(self.terrain_images[199],self.terrain_images[199])
 
-@material(blockid=6, data=range(16), transparent=True)
+# added IC2 rubber sapling
+@material(blockid=[6,242], data=range(16), transparent=True)
 def saplings(self, blockid, data):
     # usual saplings
     tex = self.terrain_images[15]
@@ -793,19 +789,29 @@ def saplings(self, blockid, data):
 # bedrock
 block(blockid=7, top_index=17)
 
-@material(blockid=8, data=range(16), fluid=True, transparent=True, nospawn=True)
+# Added BC moving Oil
+@material(blockid=[8,162], data=range(16), fluid=True, transparent=True, nospawn=True)
 def water(self, blockid, data):
-    watertex = self.load_water()
+    if blockid == 8: 		# regular moving water
+		watertex = self.load_water()
+    elif blockid == 162:	# BC moving Oil
+		watertex = Image.new("RGBA", (16,16), (0,0,0,255))
     return self.build_block(watertex, watertex)
 
-# other water, glass, and ice (no inner surfaces)
+# other water, glass, and ice (no inner surfaces), added IC2 reinforced glass, added BC still Oil and tanks
 # uses pseudo-ancildata found in iterate.c
-@material(blockid=[9, 20, 79], data=range(32), fluid=(9,), transparent=True, nospawn=True, solid=(79, 20))
+@material(blockid=[9, 20, 79, 163, 165, 230], data=range(32), fluid=(9,), transparent=True, nospawn=True, solid=(79, 20))
 def no_inner_surfaces(self, blockid, data):
     if blockid == 9:
         texture = self.load_water()
     elif blockid == 20:
         texture = self.terrain_images[49]
+    elif blockid == 163: # BC still Oil here
+		texture = Image.new("RGBA", (16,16), (0,0,0,255))
+    elif blockid == 165: # BC tanks here
+		texture = self.terrain_images[49]
+    elif blockid == 230: # IC2 Alloy Glass here
+		texture = self.terrain_images[49]
     else:
         texture = self.terrain_images[67]
         
@@ -857,38 +863,20 @@ block(blockid=15, top_index=33)
 # coal ore
 block(blockid=16, top_index=34)
 
-@material(blockid=17, data=range(12), solid=True)
+@material(blockid=17, data=range(4), solid=True)
 def wood(self, blockid, data):
-    # extract orientation and wood type frorm data bits
-    wood_type = data & 3
-    wood_orientation = data & 12
-    if self.rotation == 1:
-        if wood_orientation == 4: wood_orientation = 8
-        elif wood_orientation == 8: wood_orientation = 4
-    elif self.rotation == 3:
-        if wood_orientation == 4: wood_orientation = 8
-        elif wood_orientation == 8: wood_orientation = 4
-
-    # choose textures
     top = self.terrain_images[21]
-    if wood_type == 0: # normal
-        side = self.terrain_images[20]
-    if wood_type == 1: # birch
-        side = self.terrain_images[116]
-    if wood_type == 2: # pine
-        side = self.terrain_images[117]
-    if wood_type == 3: # jungle wood
-        side = self.terrain_images[153]
+    if data == 0: # normal
+        return self.build_block(top, self.terrain_images[20])
+    if data == 1: # birch
+        return self.build_block(top, self.terrain_images[116])
+    if data == 2: # pine
+        return self.build_block(top, self.terrain_images[117])
+    if data == 3: # jungle wood
+        return self.build_block(top, self.terrain_images[153])
 
-    # choose orientation and paste textures
-    if wood_orientation == 0:
-        return self.build_block(top, side)
-    elif wood_orientation == 4: # east-west orientation
-        return self.build_full_block(side.rotate(90), None, None, top, side.rotate(90))
-    elif wood_orientation == 8: # north-south orientation
-        return self.build_full_block(side, None, None, side.rotate(270), top)
-
-@material(blockid=18, data=range(16), transparent=True, solid=True)
+# added IC2 rubber leaves
+@material(blockid=[18,242], data=range(16), transparent=True, solid=True)
 def leaves(self, blockid, data):
     # mask out the bits 4 and 8
     # they are used for player placed and check-for-decay blocks
@@ -1360,8 +1348,6 @@ block(blockid=41, top_index=23)
 block(blockid=42, top_index=22)
 
 # double slabs and slabs
-# these wooden slabs are unobtainable without cheating, they are still
-# here because lots of pre-1.3 worlds use this blocks
 @material(blockid=[43, 44], data=range(16), transparent=(44,), solid=True)
 def slabs(self, blockid, data):
     texture = data & 7
@@ -1379,8 +1365,6 @@ def slabs(self, blockid, data):
         top = side = self.terrain_images[7]
     elif texture== 5: # stone brick
         top = side = self.terrain_images[54]
-    elif texture== 6: # nether brick slab
-        top = side = self.terrain_images[224]
     else:
         return None
     
@@ -1515,10 +1499,10 @@ def fire(self, blockid, data):
     return img
 
 # monster spawner
-block(blockid=52, top_index=65, transparent=True)
+block(blockid=52, top_index=34, transparent=True)
 
-# wooden, cobblestone, red brick, stone brick, netherbrick, sandstone, spruce, birch and jungle stairs.
-@material(blockid=[53,67,108,109,114,128,134,135,136], data=range(8), transparent=True, solid=True, nospawn=True)
+# wooden, cobblestone, red brick, stone brick and netherbrick stairs.
+@material(blockid=[53,67,108,109,114], data=range(8), transparent=True, solid=True, nospawn=True)
 def stairs(self, blockid, data):
 
     # first, rotations
@@ -1552,27 +1536,12 @@ def stairs(self, blockid, data):
         texture = self.terrain_images[54]
     elif blockid == 114: # netherbrick stairs
         texture = self.terrain_images[224]
-    elif blockid == 128: # sandstone stairs
-        texture = self.terrain_images[192]
-    elif blockid == 134: # spruce wood stairs
-        texture = self.terrain_images[198]
-    elif blockid == 135: # birch wood  stairs
-        texture = self.terrain_images[214]
-    elif blockid == 136: # jungle good stairs
-        texture = self.terrain_images[199]
-
-
+    
     side = texture.copy()
     half_block_u = texture.copy() # up, down, left, right
     half_block_d = texture.copy()
     half_block_l = texture.copy()
     half_block_r = texture.copy()
-
-    # sandstone stairs have spcial top texture
-    if blockid == 128:
-        half_block_u = self.terrain_images[176].copy()
-        half_block_d = self.terrain_images[176].copy()
-        texture = self.terrain_images[176].copy()
 
     # generate needed geometries
     ImageDraw.Draw(side).rectangle((0,0,7,6),outline=(0,0,0,0),fill=(0,0,0,0))
@@ -1651,195 +1620,50 @@ def stairs(self, blockid, data):
         
     return img
 
-# normal, locked (used in april's fool day) and ender chests chests
-@material(blockid=[54,95,130], data=range(30), transparent = True)
+# normal and locked chest (locked was the one used in april fools' day)
+# uses pseudo-ancildata found in iterate.c
+@material(blockid=[54,95], data=range(12), solid=True)
 def chests(self, blockid, data):
-    # the first 3 bits are the orientation as stored in minecraft, 
-    # bits 0x8 and 0x10 indicate which half of the double chest is it.
+    # First two bits of the pseudo data store if it's a single chest
+    # or it's a double chest, first half or second half (left to right).
+    # The last two bits store the orientation.
     
-    # first, do the rotation if needed
-    orientation_data = data & 7
-    if self.rotation == 1:
-        if orientation_data == 2: data = 5 | (data & 24)
-        elif orientation_data == 3: data = 4 | (data & 24)
-        elif orientation_data == 4: data = 2 | (data & 24)
-        elif orientation_data == 5: data = 3 | (data & 24)
-    elif self.rotation == 2:
-        if orientation_data == 2: data = 3 | (data & 24)
-        elif orientation_data == 3: data = 2 | (data & 24)
-        elif orientation_data == 4: data = 5 | (data & 24)
-        elif orientation_data == 5: data = 4 | (data & 24)
-    elif self.rotation == 3:
-        if orientation_data == 2: data = 4 | (data & 24)
-        elif orientation_data == 3: data = 5 | (data & 24)
-        elif orientation_data == 4: data = 3 | (data & 24)
-        elif orientation_data == 5: data = 2 | (data & 24)
-    
-    if blockid in (95,130) and not data in [2,3,4,5]: return None
-        # iterate.c will only return the ancil data (without pseudo 
-        # ancil data) for locked and ender chests, so only 
-        # ancilData = 2,3,4,5 are used for this blockids
-    
-    if data & 24 == 0:
-        if blockid == 130: t = self.load_image("enderchest.png")
-        else: t = self.load_image("chest.png")
+    # No need for rotation stuff, uses pseudo data and rotates with the map
 
-        # the textures is no longer in terrain.png, get it from 
-        # item/chest.png and get by cropping all the needed stuff
-        if t.size != (64,64): t = t.resize((64,64), Image.ANTIALIAS)
-        # top
-        top = t.crop((14,0,28,14))
-        top.load() # every crop need a load, crop is a lazy operation
-                   # see PIL manual
-        img = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(img,top,(1,1))
-        top = img
-        # front
-        front_top = t.crop((14,14,28,19))
-        front_top.load()
-        front_bottom = t.crop((14,34,28,43))
-        front_bottom.load()
-        front_lock = t.crop((1,0,3,4))
-        front_lock.load()
-        front = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(front,front_top, (1,1))
-        alpha_over(front,front_bottom, (1,6))
-        alpha_over(front,front_lock, (7,3))
-        # left side
-        # left side, right side, and back are esentially the same for
-        # the default texture, we take it anyway just in case other
-        # textures make use of it.
-        side_l_top = t.crop((0,14,14,19))
-        side_l_top.load()
-        side_l_bottom = t.crop((0,34,14,43))
-        side_l_bottom.load()
-        side_l = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(side_l,side_l_top, (1,1))
-        alpha_over(side_l,side_l_bottom, (1,6))
-        # right side
-        side_r_top = t.crop((28,14,43,20))
-        side_r_top.load()
-        side_r_bottom = t.crop((28,33,42,43))
-        side_r_bottom.load()
-        side_r = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(side_r,side_l_top, (1,1))
-        alpha_over(side_r,side_l_bottom, (1,6))
-        # back
-        back_top = t.crop((42,14,56,18))
-        back_top.load()
-        back_bottom = t.crop((42,33,56,43))
-        back_bottom.load()
-        back = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(back,side_l_top, (1,1))
-        alpha_over(back,side_l_bottom, (1,6))
+    top = self.terrain_images[25]
+    side = self.terrain_images[26]
 
-    else:
-        # large chest
-        # the textures is no longer in terrain.png, get it from 
-        # item/chest.png and get all the needed stuff
-        t = self.load_image("largechest.png")
-        if t.size != (128,64): t = t.resize((128,64), Image.ANTIALIAS)
-        # top
-        top = t.crop((14,0,44,14))
-        top.load()
-        img = Image.new("RGBA", (32,16), self.bgcolor)
-        alpha_over(img,top,(1,1))
-        top = img
-        # front
-        front_top = t.crop((14,14,44,18))
-        front_top.load()
-        front_bottom = t.crop((14,33,44,43))
-        front_bottom.load()
-        front_lock = t.crop((1,0,3,5))
-        front_lock.load()
-        front = Image.new("RGBA", (32,16), self.bgcolor)
-        alpha_over(front,front_top,(1,1))
-        alpha_over(front,front_bottom,(1,5))
-        alpha_over(front,front_lock,(15,3))
-        # left side
-        side_l_top = t.crop((0,14,14,18))
-        side_l_top.load()
-        side_l_bottom = t.crop((0,33,14,43))
-        side_l_bottom.load()
-        side_l = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(side_l,side_l_top, (1,1))
-        alpha_over(side_l,side_l_bottom,(1,5))
-        # right side
-        side_r_top = t.crop((44,14,58,18))
-        side_r_top.load()
-        side_r_bottom = t.crop((44,33,58,43))
-        side_r_bottom.load()
-        side_r = Image.new("RGBA", (16,16), self.bgcolor)
-        alpha_over(side_r,side_r_top, (1,1))
-        alpha_over(side_r,side_r_bottom,(1,5))
-        # back
-        back_top = t.crop((58,14,88,18))
-        back_top.load()
-        back_bottom = t.crop((58,33,88,43))
-        back_bottom.load()
-        back = Image.new("RGBA", (32,16), self.bgcolor)
-        alpha_over(back,back_top,(1,1))
-        alpha_over(back,back_bottom,(1,5))
-        
+    if data & 12 == 0: # single chest
+        front = self.terrain_images[27]
+        back = self.terrain_images[26]
 
-        if data & 24 == 8: # double chest, first half
-            top = top.crop((0,0,16,16))
-            top.load()
-            front = front.crop((0,0,16,16))
-            front.load()
-            back = back.crop((0,0,16,16))
-            back.load()
-            #~ side = side_l
+    elif data & 12 == 4: # double, first half
+        front = self.terrain_images[41]
+        back = self.terrain_images[57]
 
-        elif data & 24 == 16: # double, second half
-            top = top.crop((16,0,32,16))
-            top.load()
-            front = front.crop((16,0,32,16))
-            front.load()
-            back = back.crop((16,0,32,16))
-            back.load()
-            #~ side = side_r
+    elif data & 12 == 8: # double, second half
+        front = self.terrain_images[42]
+        back = self.terrain_images[58]
 
-        else: # just in case
-            return None
-
-    # compose the final block
-    img = Image.new("RGBA", (24,24), self.bgcolor)
-    if data & 7 == 2: # north
-        side = self.transform_image_side(side_r)
-        alpha_over(img, side, (1,7))
-        back = self.transform_image_side(back)
-        alpha_over(img, back.transpose(Image.FLIP_LEFT_RIGHT), (11,7))
-        front = self.transform_image_side(front)
-        top = self.transform_image_top(top.rotate(180))
-        alpha_over(img, top, (0,2))
-
-    elif data & 7 == 3: # south
-        side = self.transform_image_side(side_l)
-        alpha_over(img, side, (1,7))
-        front = self.transform_image_side(front).transpose(Image.FLIP_LEFT_RIGHT)
-        top = self.transform_image_top(top.rotate(180))
-        alpha_over(img, top, (0,2))
-        alpha_over(img, front,(11,7))
-
-    elif data & 7 == 4: # west
-        side = self.transform_image_side(side_r)
-        alpha_over(img, side.transpose(Image.FLIP_LEFT_RIGHT), (11,7))
-        front = self.transform_image_side(front)
-        alpha_over(img, front,(1,7))
-        top = self.transform_image_top(top.rotate(270))
-        alpha_over(img, top, (0,2))
-
-    elif data & 7 == 5: # east
-        back = self.transform_image_side(back)
-        side = self.transform_image_side(side_l).transpose(Image.FLIP_LEFT_RIGHT)
-        alpha_over(img, side, (11,7))
-        alpha_over(img, back, (1,7))
-        top = self.transform_image_top(top.rotate(270))
-        alpha_over(img, top, (0,2))
-        
     else: # just in case
-        img = None
+        front = self.terrain_images[25]
+        side = self.terrain_images[25]
+        back = self.terrain_images[25]
+
+    if data & 3 == 0: # facing west
+        img = self.build_full_block(top, None, None, side, front)
+
+    elif data & 3 == 1: # north
+        img = self.build_full_block(top, None, None, front, side)
+
+    elif data & 3 == 2: # east
+        img = self.build_full_block(top, None, None, side, back)
+
+    elif data & 3 == 3: # south
+        img = self.build_full_block(top, None, None, back, side)
+        
+    else:
+        img = self.build_full_block(top, None, None, back, side)
 
     return img
 
@@ -1928,9 +1752,9 @@ block(blockid=56, top_index=50)
 # diamond block
 block(blockid=57, top_index=24)
 
-# crafting table
+# crafting table, added BC auto workbench
 # needs two different sides
-@material(blockid=58, solid=True, nodata=True)
+@material(blockid=[58,152], solid=True, nodata=True)
 def crafting_table(self, blockid, data):
     top = self.terrain_images[43]
     side3 = self.terrain_images[43+16]
@@ -1939,8 +1763,8 @@ def crafting_table(self, blockid, data):
     img = self.build_full_block(top, None, None, side3, side4, None)
     return img
 
-# crops
-@material(blockid=59, data=range(8), transparent=True, nospawn=True)
+# crops, added IC2 crops
+@material(blockid=[59,218], data=range(8), transparent=True, nospawn=True)
 def crops(self, blockid, data):
     raw_crop = self.terrain_images[88+data]
     crop1 = self.transform_image_top(raw_crop)
@@ -2014,9 +1838,9 @@ def signpost(self, blockid, data):
     return img
 
 
-# wooden and iron door
+# wooden and iron door, added IC2 door
 # uses pseudo-ancildata found in iterate.c
-@material(blockid=[64,71], data=range(32), transparent=True)
+@material(blockid=[64,71,228], data=range(32), transparent=True)
 def door(self, blockid, data):
     #Masked to not clobber block top/bottom & swung info
     if self.rotation == 1:
@@ -2415,8 +2239,7 @@ def pressure_plate(self, blockid, data):
 # normal and glowing redstone ore
 block(blockid=[73, 74], top_index=51)
 
-# stone a wood buttons
-@material(blockid=(77,143), data=range(16), transparent=True)
+@material(blockid=77, data=range(16), transparent=True)
 def buttons(self, blockid, data):
 
     # 0x8 is set if the button is pressed mask this info and render
@@ -2439,10 +2262,7 @@ def buttons(self, blockid, data):
         elif data == 3: data = 1
         elif data == 4: data = 2
 
-    if blockid == 77:
-        t = self.terrain_images[1].copy()
-    else:
-        t = self.terrain_images[4].copy()
+    t = self.terrain_images[1].copy()
 
     # generate the texture for the button
     ImageDraw.Draw(t).rectangle((0,0,15,5),outline=(0,0,0,0),fill=(0,0,0,0))
@@ -2553,9 +2373,9 @@ def sugar_cane(self, blockid, data):
 def jukebox(self, blockid, data):
     return self.build_block(self.terrain_images[75], self.terrain_images[74])
 
-# nether and normal fences
+# nether and normal fences, added IC2 fence
 # uses pseudo-ancildata found in iterate.c
-@material(blockid=[85, 113], data=range(16), transparent=True, nospawn=True)
+@material(blockid=[85, 113,232], data=range(16), transparent=True, nospawn=True)
 def fence(self, blockid, data):
     # no need for rotations, it uses pseudo data.
     # create needed images for Big stick fence
@@ -2715,126 +2535,32 @@ def portal(self, blockid, data):
     return img
 
 # cake!
+# TODO is rendered un-bitten
 @material(blockid=92, data=range(6), transparent=True, nospawn=True)
 def cake(self, blockid, data):
+
+    # choose textures for cake
+    top = self.terrain_images[121]
+    side = self.terrain_images[122]
+    top = self.transform_image_top(top)
+    side = self.transform_image_side(side)
+    otherside = side.transpose(Image.FLIP_LEFT_RIGHT)
     
-    # cake textures
-    top = self.terrain_images[121].copy()
-    side = self.terrain_images[122].copy()
-    fullside = side.copy()
-    inside = self.terrain_images[123]
+    # darken sides slightly
+    sidealpha = side.split()[3]
+    side = ImageEnhance.Brightness(side).enhance(0.9)
+    side.putalpha(sidealpha)
+    othersidealpha = otherside.split()[3]
+    otherside = ImageEnhance.Brightness(otherside).enhance(0.8)
+    otherside.putalpha(othersidealpha)
     
     img = Image.new("RGBA", (24,24), self.bgcolor)
-    if data == 0: # unbitten cake
-        top = self.transform_image_top(top)
-        side = self.transform_image_side(side)
-        otherside = side.transpose(Image.FLIP_LEFT_RIGHT)
-        
-        # darken sides slightly
-        sidealpha = side.split()[3]
-        side = ImageEnhance.Brightness(side).enhance(0.9)
-        side.putalpha(sidealpha)
-        othersidealpha = otherside.split()[3]
-        otherside = ImageEnhance.Brightness(otherside).enhance(0.8)
-        otherside.putalpha(othersidealpha)
-        
-        # composite the cake
-        alpha_over(img, side, (1,6), side)
-        alpha_over(img, otherside, (11,7), otherside) # workaround, fixes a hole
-        alpha_over(img, otherside, (12,6), otherside)
-        alpha_over(img, top, (0,6), top)
     
-    else:
-        # cut the textures for a bitten cake
-        coord = int(16./6.*data)
-        ImageDraw.Draw(side).rectangle((16 - coord,0,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
-        ImageDraw.Draw(top).rectangle((0,0,coord,16),outline=(0,0,0,0),fill=(0,0,0,0))
-
-        # the bitten part of the cake always points to the west
-        # composite the cake for every north orientation
-        if self.rotation == 0: # north top-left
-            # create right side
-            rs = self.transform_image_side(side).transpose(Image.FLIP_LEFT_RIGHT)
-            # create bitten side and its coords
-            deltax = 2*data
-            deltay = -1*data
-            if data == 3: deltax += 1 # special case fixing pixel holes
-            ls = self.transform_image_side(inside)
-            # create top side
-            t = self.transform_image_top(top)
-            # darken sides slightly
-            sidealpha = ls.split()[3]
-            ls = ImageEnhance.Brightness(ls).enhance(0.9)
-            ls.putalpha(sidealpha)
-            othersidealpha = rs.split()[3]
-            rs = ImageEnhance.Brightness(rs).enhance(0.8)
-            rs.putalpha(othersidealpha)
-            # compose the cake
-            alpha_over(img, rs, (12,6), rs)
-            alpha_over(img, ls, (1 + deltax,6 + deltay), ls)
-            alpha_over(img, t, (0,6), t)
-
-        elif self.rotation == 1: # north top-right
-            # bitten side not shown
-            # create left side
-            ls = self.transform_image_side(side.transpose(Image.FLIP_LEFT_RIGHT))
-            # create top
-            t = self.transform_image_top(top.rotate(-90))
-            # create right side
-            rs = self.transform_image_side(fullside).transpose(Image.FLIP_LEFT_RIGHT)
-            # darken sides slightly
-            sidealpha = ls.split()[3]
-            ls = ImageEnhance.Brightness(ls).enhance(0.9)
-            ls.putalpha(sidealpha)
-            othersidealpha = rs.split()[3]
-            rs = ImageEnhance.Brightness(rs).enhance(0.8)
-            rs.putalpha(othersidealpha)
-            # compose the cake
-            alpha_over(img, ls, (2,6), ls)
-            alpha_over(img, t, (0,6), t)
-            alpha_over(img, rs, (12,6), rs)
-
-        elif self.rotation == 2: # north bottom-right
-            # bitten side not shown
-            # left side
-            ls = self.transform_image_side(fullside)
-            # top
-            t = self.transform_image_top(top.rotate(180))
-            # right side
-            rs = self.transform_image_side(side.transpose(Image.FLIP_LEFT_RIGHT)).transpose(Image.FLIP_LEFT_RIGHT)
-            # darken sides slightly
-            sidealpha = ls.split()[3]
-            ls = ImageEnhance.Brightness(ls).enhance(0.9)
-            ls.putalpha(sidealpha)
-            othersidealpha = rs.split()[3]
-            rs = ImageEnhance.Brightness(rs).enhance(0.8)
-            rs.putalpha(othersidealpha)
-            # compose the cake
-            alpha_over(img, ls, (2,6), ls)
-            alpha_over(img, t, (1,6), t)
-            alpha_over(img, rs, (12,6), rs)
-
-        elif self.rotation == 3: # north bottom-left
-            # create left side
-            ls = self.transform_image_side(side)
-            # create top
-            t = self.transform_image_top(top.rotate(90))
-            # create right side and its coords
-            deltax = 12-2*data
-            deltay = -1*data
-            if data == 3: deltax += -1 # special case fixing pixel holes
-            rs = self.transform_image_side(inside).transpose(Image.FLIP_LEFT_RIGHT)
-            # darken sides slightly
-            sidealpha = ls.split()[3]
-            ls = ImageEnhance.Brightness(ls).enhance(0.9)
-            ls.putalpha(sidealpha)
-            othersidealpha = rs.split()[3]
-            rs = ImageEnhance.Brightness(rs).enhance(0.8)
-            rs.putalpha(othersidealpha)
-            # compose the cake
-            alpha_over(img, ls, (2,6), ls)
-            alpha_over(img, t, (1,6), t)
-            alpha_over(img, rs, (1 + deltax,6 + deltay), rs)
+    # composite the cake
+    alpha_over(img, side, (1,6), side)
+    alpha_over(img, otherside, (11,7), otherside) # workaround, fixes a hole
+    alpha_over(img, otherside, (12,6), otherside)
+    alpha_over(img, top, (0,6), top)
 
     return img
 
@@ -2985,7 +2711,7 @@ def repeater(self, blockid, data):
     
 # trapdoor
 # TODO the trapdoor is looks like a sprite when opened, that's not good
-@material(blockid=96, data=range(16), transparent=True, nospawn=True)
+@material(blockid=96, data=range(8), transparent=True, nospawn=True)
 def trapdoor(self, blockid, data):
 
     # rotation
@@ -3019,12 +2745,7 @@ def trapdoor(self, blockid, data):
             img = self.build_full_block(None, None, None, texture, None)
         
     elif data & 0x4 == 0: # closed trapdoor
-        if data & 0x8 == 0x8: # is a top trapdoor
-            img = Image.new("RGBA", (24,24), self.bgcolor)
-            t = self.build_full_block((texture, 12), None, None, texture, texture)
-            alpha_over(img, t, (0,-9),t)
-        else: # is a bottom trapdoor
-            img = self.build_full_block((texture, 12), None, None, texture, texture)
+        img = self.build_full_block((texture, 12), None, None, texture, texture)
     
     return img
 
@@ -3374,11 +3095,8 @@ def enchantment_table(self, blockid, data):
 # TODO this is a place holder, is a 2d image pasted
 @material(blockid=117, data=range(5), transparent=True)
 def brewing_stand(self, blockid, data):
-    base = self.terrain_images[156]
-    img = self.build_full_block(None, None, None, None, None, base)
     t = self.terrain_images[157]
-    stand = self.build_billboard(t)
-    alpha_over(img,stand,(0,-2))
+    img = self.build_billboard(t)
     return img
 
 # cauldron
@@ -3464,399 +3182,180 @@ block(blockid=123, top_index=211)
 # active redstone lamp
 block(blockid=124, top_index=212)
 
-# wooden double and normal slabs
-# these are the new wooden slabs, blockids 43 44 still have wooden
-# slabs, but those are unobtainable without cheating
-@material(blockid=[125, 126], data=range(16), transparent=(44,), solid=True)
-def wooden_slabs(self, blockid, data):
-    texture = data & 7
-    if texture== 0: # oak 
-        top = side = self.terrain_images[4]
-    elif texture== 1: # spruce
-        top = side = self.terrain_images[198]
-    elif texture== 2: # birch
-        top = side = self.terrain_images[214]
-    elif texture== 3: # jungle
-        top = side = self.terrain_images[199]
-    else:
-        return None
-    
-    if blockid == 125: # double slab
-        return self.build_block(top, side)
-    
-    # cut the side texture in half
-    mask = side.crop((0,8,16,16))
-    side = Image.new(side.mode, side.size, self.bgcolor)
-    alpha_over(side, mask,(0,0,16,8), mask)
-    
-    # plain slab
-    top = self.transform_image_top(top)
-    side = self.transform_image_side(side)
-    otherside = side.transpose(Image.FLIP_LEFT_RIGHT)
-    
-    sidealpha = side.split()[3]
-    side = ImageEnhance.Brightness(side).enhance(0.9)
-    side.putalpha(sidealpha)
-    othersidealpha = otherside.split()[3]
-    otherside = ImageEnhance.Brightness(otherside).enhance(0.8)
-    otherside.putalpha(othersidealpha)
-    
-    # upside down slab
-    delta = 0
-    if data & 8 == 8:
-        delta = 6
-    
-    img = Image.new("RGBA", (24,24), self.bgcolor)
-    alpha_over(img, side, (0,12 - delta), side)
-    alpha_over(img, otherside, (12,12 - delta), otherside)
-    alpha_over(img, top, (0,6 - delta), top)
-    
-    return img
 
-# emerald ore
-block(blockid=129, top_index=171)
+# IC2 BLOCKS START HERE
+# Iron Block texture (22) for everything by default, for now
 
-# emerald block
-block(blockid=133, top_index=25)
+# blockAlloy=231
+block(blockid=231, top_index=22)
 
-# cocoa plant
-@material(blockid=127, data=range(12), transparent=True)
-def cocoa_plant(self, blockid, data):
-    orientation = data & 3
-    # rotation
-    if self.rotation == 1:
-        if orientation == 0: orientation = 1
-        elif orientation == 1: orientation = 2
-        elif orientation == 2: orientation = 3
-        elif orientation == 3: orientation = 0
-    elif self.rotation == 2:
-        if orientation == 0: orientation = 2
-        elif orientation == 1: orientation = 3
-        elif orientation == 2: orientation = 0
-        elif orientation == 3: orientation = 1
-    elif self.rotation == 3:
-        if orientation == 0: orientation = 3
-        elif orientation == 1: orientation = 0
-        elif orientation == 2: orientation = 1
-        elif orientation == 3: orientation = 2
+# blockAlloyGlass=230
+# Handled further up like regular glass, under no_inner_surfaces
 
-    size = data & 12
-    if size == 8: # big
-        t = self.terrain_images[168]
-        c_left = (0,3)
-        c_right = (8,3)
-        c_top = (5,2)
-    elif size == 4: # normal
-        t = self.terrain_images[169]
-        c_left = (-2,2)
-        c_right = (8,2)
-        c_top = (5,2)
-    elif size == 0: # small
-        t = self.terrain_images[170]
-        c_left = (-3,2)
-        c_right = (6,2)
-        c_top = (5,2)
+# blockBarrel=217, Looks like regular wood
+block(blockid=217, top_index=20)
 
-    # let's get every texture piece necessary to do this
-    stalk = t.copy()
-    ImageDraw.Draw(stalk).rectangle((0,0,11,16),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(stalk).rectangle((12,4,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
-    
-    top = t.copy() # warning! changes with plant size
-    ImageDraw.Draw(top).rectangle((0,7,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(top).rectangle((7,0,16,6),outline=(0,0,0,0),fill=(0,0,0,0))
+# blockCable=228
+block(blockid=228, top_index=22)
 
-    side = t.copy() # warning! changes with plant size
-    ImageDraw.Draw(side).rectangle((0,0,6,16),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(side).rectangle((0,0,16,3),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(side).rectangle((0,14,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
-    
-    # first compose the block of the cocoa plant
-    block = Image.new("RGBA", (24,24), self.bgcolor)
-    tmp = self.transform_image_side(side).transpose(Image.FLIP_LEFT_RIGHT)
-    alpha_over (block, tmp, c_right,tmp) # right side
-    tmp = tmp.transpose(Image.FLIP_LEFT_RIGHT)
-    alpha_over (block, tmp, c_left,tmp) # left side
-    tmp = self.transform_image_top(top)
-    alpha_over(block, tmp, c_top,tmp)
-    if size == 0:
-        # fix a pixel hole
-        block.putpixel((6,9), block.getpixel((6,10)))
+# blockCrop=218, should handle like regular crops if everything goes well
+# block(blockid=218, top_index=22) <- use this instead if the stuff further up fails
 
-    # compose the cocoa plant
-    img = Image.new("RGBA", (24,24), self.bgcolor)
-    if orientation in (2,3): # south and west
-        tmp = self.transform_image_side(stalk).transpose(Image.FLIP_LEFT_RIGHT)
-        alpha_over(img, block,(-1,-2), block)
-        alpha_over(img, tmp, (4,-2), tmp)
-        if orientation == 3:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
-    elif orientation in (0,1): # north and east
-        tmp = self.transform_image_side(stalk.transpose(Image.FLIP_LEFT_RIGHT))
-        alpha_over(img, block,(-1,5), block)
-        alpha_over(img, tmp, (2,12), tmp)
-        if orientation == 0:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+# blockDoorAlloy=229, handle like regular doors further up
+# block(blockid=229, top_index=22)
 
-    return img
+# blockDynamite=236, looks like TNT
+block(blockid=236, top_index=9, side_index=8, nospawn=True)
 
-# command block
-block(blockid=137, top_index=184)
+# blockDynamiteRemote=235, looks like TNT sides
+block(blockid=235, top_index=10, nospawn=True)
 
-# beacon block
-# at the moment of writing this, it seems the beacon block doens't use
-# the data values
-@material(blockid=138, transparent=True, nodata = True)
-def beacon(self, blockid, data):
-    # generate the three pieces of the block
-    t = self.terrain_images[49]
-    glass = self.build_block(t,t)
-    t = self.terrain_images[37]
-    obsidian = self.build_full_block((t,12),None, None, t, t)
-    obsidian = obsidian.resize((20,20), Image.ANTIALIAS)
-    t = self.terrain_images[41]
-    crystal = self.build_block(t,t)
-    crystal = crystal.resize((16,16),Image.ANTIALIAS)
-    
-    # compose the block
-    img = Image.new("RGBA", (24,24), self.bgcolor)
-    alpha_over(img, obsidian, (2, 4), obsidian)
-    alpha_over(img, crystal, (4,3), crystal)
-    alpha_over(img, glass, (0,0), glass)
-    
-    return img
+# blockElectric=227
+block(blockid=227, top_index=22)
 
-# cobbleston and mossy cobblestone walls
-# one additional bit of data value added for mossy and cobblestone
-@material(blockid=139, data=range(32), transparent=True, nospawn=True)
-def cobblestone_wall(self, blockid, data):
-    # no rotation, uses pseudo data
-    if data & 0b10000 == 0:
-        # cobblestone
-        t = self.terrain_images[16].copy()
-    else:
-        # mossy cobblestone
-        t = self.terrain_images[36].copy()
+# blockFenceIron=232, handl this like regular fences, further up
+# block(blockid=232, top_index=22)
 
-    wall_pole_top = t.copy()
-    wall_pole_side = t.copy()
-    wall_side_top = t.copy()
-    wall_side = t.copy()
-    # _full is used for walls without pole
-    wall_side_top_full = t.copy()
-    wall_side_full = t.copy()
+# blockFoam=222, looks like white wool
+block(blockid=222, top_index=64)
 
-    # generate the textures of the wall
-    ImageDraw.Draw(wall_pole_top).rectangle((0,0,3,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_pole_top).rectangle((12,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_pole_top).rectangle((0,0,15,3),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_pole_top).rectangle((0,12,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+# blockGenerator=246
+block(blockid=246, top_index=22)
 
-    ImageDraw.Draw(wall_pole_side).rectangle((0,0,3,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_pole_side).rectangle((12,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+# blockHarz=240, looks like regular wood
+block(blockid=240, top_index=20)
 
-    # Create the sides and the top of the pole
-    wall_pole_side = self.transform_image_side(wall_pole_side)
-    wall_pole_other_side = wall_pole_side.transpose(Image.FLIP_LEFT_RIGHT)
-    wall_pole_top = self.transform_image_top(wall_pole_top)
+# blockITNT=239, looks like TNT
+block(blockid=239, top_index=9, side_index=8, nospawn=True)
 
-    # Darken the sides slightly. These methods also affect the alpha layer,
-    # so save them first (we don't want to "darken" the alpha layer making
-    # the block transparent)
-    sidealpha = wall_pole_side.split()[3]
-    wall_pole_side = ImageEnhance.Brightness(wall_pole_side).enhance(0.8)
-    wall_pole_side.putalpha(sidealpha)
-    othersidealpha = wall_pole_other_side.split()[3]
-    wall_pole_other_side = ImageEnhance.Brightness(wall_pole_other_side).enhance(0.7)
-    wall_pole_other_side.putalpha(othersidealpha)
+# blockIronScaffold=216
+block(blockid=216, top_index=22)
 
-    # Compose the wall pole
-    wall_pole = Image.new("RGBA", (24,24), self.bgcolor)
-    alpha_over(wall_pole,wall_pole_side, (3,4),wall_pole_side)
-    alpha_over(wall_pole,wall_pole_other_side, (9,4),wall_pole_other_side)
-    alpha_over(wall_pole,wall_pole_top, (0,0),wall_pole_top)
-    
-    # create the sides and the top of a wall attached to a pole
-    ImageDraw.Draw(wall_side).rectangle((0,0,15,2),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_side).rectangle((0,0,11,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_side_top).rectangle((0,0,11,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_side_top).rectangle((0,0,15,4),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_side_top).rectangle((0,11,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    # full version, without pole
-    ImageDraw.Draw(wall_side_full).rectangle((0,0,15,2),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_side_top_full).rectangle((0,4,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(wall_side_top_full).rectangle((0,4,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+# blockLuminator=226, looks like redstone lamp
+block(blockid=226, top_index=211)
 
-    # compose the sides of a wall atached to a pole
-    tmp = Image.new("RGBA", (24,24), self.bgcolor)
-    wall_side = self.transform_image_side(wall_side)
-    wall_side_top = self.transform_image_top(wall_side_top)
+# blockLuminatorDark=219, looks like redstone lamp, off
+block(blockid=219, top_index=212)
 
-    # Darken the sides slightly. These methods also affect the alpha layer,
-    # so save them first (we don't want to "darken" the alpha layer making
-    # the block transparent)
-    sidealpha = wall_side.split()[3]
-    wall_side = ImageEnhance.Brightness(wall_side).enhance(0.7)
-    wall_side.putalpha(sidealpha)
+# blockMachine=250
+block(blockid=250, top_index=22)
 
-    alpha_over(tmp,wall_side, (0,0),wall_side)
-    alpha_over(tmp,wall_side_top, (-5,3),wall_side_top)
-    wall_side = tmp
-    wall_other_side = wall_side.transpose(Image.FLIP_LEFT_RIGHT)
+# blockMachine2=223
+block(blockid=223, top_index=22)
 
-    # compose the sides of the full wall
-    tmp = Image.new("RGBA", (24,24), self.bgcolor)
-    wall_side_full = self.transform_image_side(wall_side_full)
-    wall_side_top_full = self.transform_image_top(wall_side_top_full.rotate(90))
+# blockMetal=224
+block(blockid=224, top_index=22)
 
-    # Darken the sides slightly. These methods also affect the alpha layer,
-    # so save them first (we don't want to "darken" the alpha layer making
-    # the block transparent)
-    sidealpha = wall_side_full.split()[3]
-    wall_side_full = ImageEnhance.Brightness(wall_side_full).enhance(0.7)
-    wall_side_full.putalpha(sidealpha)
+# blockMiningPipe=245
+block(blockid=245, top_index=22)
 
-    alpha_over(tmp,wall_side_full, (4,0),wall_side_full)
-    alpha_over(tmp,wall_side_top_full, (3,-4),wall_side_top_full)
-    wall_side_full = tmp
-    wall_other_side_full = wall_side_full.transpose(Image.FLIP_LEFT_RIGHT)
+# blockMiningTip=244
+block(blockid=244, top_index=22)
 
-    # Create img to compose the wall
-    img = Image.new("RGBA", (24,24), self.bgcolor)
+# blockNuke=237, looks like bedrock, for that extra warning sign
+block(blockid=237, top_index=17)
 
-    # Position wall imgs around the wall bit stick
-    pos_top_left = (-5,-2)
-    pos_bottom_left = (-8,4)
-    pos_top_right = (5,-3)
-    pos_bottom_right = (7,4)
-    
-    # +x axis points top right direction
-    # +y axis points bottom right direction
-    # There are two special cases for wall without pole.
-    # Normal case: 
-    # First compose the walls in the back of the image, 
-    # then the pole and then the walls in the front.
-    if (data == 0b1010) or (data == 0b11010):
-        alpha_over(img, wall_other_side_full,(0,2), wall_other_side_full)
-    elif (data == 0b0101) or (data == 0b10101):
-        alpha_over(img, wall_side_full,(0,2), wall_side_full)
-    else:
-        if (data & 0b0001) == 1:
-            alpha_over(img,wall_side, pos_top_left,wall_side)                # top left
-        if (data & 0b1000) == 8:
-            alpha_over(img,wall_other_side, pos_top_right,wall_other_side)    # top right
+# blockOreCopper=249
+block(blockid=249, top_index=22)
 
-        alpha_over(img,wall_pole,(0,0),wall_pole)
-            
-        if (data & 0b0010) == 2:
-            alpha_over(img,wall_other_side, pos_bottom_left,wall_other_side)      # bottom left    
-        if (data & 0b0100) == 4:
-            alpha_over(img,wall_side, pos_bottom_right,wall_side)                  # bottom right
-    
-    return img
+# blockOreTin=248
+block(blockid=248, top_index=22)
 
-# carrots and potatoes
-@material(blockid=[141,142], data=range(8), transparent=True, nospawn=True)
-def crops(self, blockid, data):
-    if data != 7: # when growing they look the same
-        # data = 7 -> fully grown, everything else is growing
-        # this seems to work, but still not sure
-        raw_crop = self.terrain_images[200 + (data % 3)]
-    elif blockid == 141: # carrots
-        raw_crop = self.terrain_images[203]
-    else: # potatoes
-        raw_crop = self.terrain_images[204]
-    crop1 = self.transform_image_top(raw_crop)
-    crop2 = self.transform_image_side(raw_crop)
-    crop3 = crop2.transpose(Image.FLIP_LEFT_RIGHT)
+# blockOreUran=247
+block(blockid=247, top_index=22)
 
-    img = Image.new("RGBA", (24,24), self.bgcolor)
-    alpha_over(img, crop1, (0,12), crop1)
-    alpha_over(img, crop2, (6,3), crop2)
-    alpha_over(img, crop3, (6,3), crop3)
-    return img
+# blockPersonal=225
+block(blockid=225, top_index=22)
 
-# anvils
-@material(blockid=145, data=range(12), transparent=True)
-def anvil(self, blockid, data):
-    
-    # anvils only have two orientations, invert it for rotations 1 and 3
-    orientation = data & 0x1
-    if self.rotation in (1,3):
-        if orientation == 1:
-            orientation = 0
-        else:
-            orientation = 1
+# blockReactorChamber=233
+block(blockid=233, top_index=22)
 
-    # get the correct textures
-    # the bits 0x4 and 0x8 determine how damaged is the anvil
-    if (data & 0xc) == 0: # non damaged anvil
-        top = self.terrain_images[231]
-    elif (data & 0xc) == 0x4: # slightly damaged
-        top = self.terrain_images[232]
-    elif (data & 0xc) == 0x8: # very damaged
-        top = self.terrain_images[216]
-    # everything else use this texture
-    big_side = self.terrain_images[215].copy()
-    small_side = self.terrain_images[215].copy()
-    base = self.terrain_images[215].copy()
-    small_base = self.terrain_images[215].copy()
-    
-    # cut needed patterns
-    ImageDraw.Draw(big_side).rectangle((0,8,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(small_side).rectangle((0,0,2,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(small_side).rectangle((13,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(small_side).rectangle((0,8,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
-    ImageDraw.Draw(base).rectangle((0,0,15,15),outline=(0,0,0,0))
-    ImageDraw.Draw(base).rectangle((1,1,14,14),outline=(0,0,0,0))
-    ImageDraw.Draw(small_base).rectangle((0,0,15,15),outline=(0,0,0,0))
-    ImageDraw.Draw(small_base).rectangle((1,1,14,14),outline=(0,0,0,0))
-    ImageDraw.Draw(small_base).rectangle((2,2,13,13),outline=(0,0,0,0))
-    ImageDraw.Draw(small_base).rectangle((3,3,12,12),outline=(0,0,0,0))
-    
-    # check orientation and compose the anvil
-    if orientation == 1: # bottom-left top-right
-        top = top.rotate(90)
-        left_side = small_side
-        left_pos = (1,7)
-        right_side = big_side
-        right_pos = (10,5)
-    else: # top-left bottom-right
-        right_side = small_side
-        right_pos = (12,7)
-        left_side = big_side
-        left_pos = (3,5)
-    
-    img = Image.new("RGBA", (24,24), self.bgcolor)
-    
-    # darken sides
-    alpha = big_side.split()[3]
-    big_side = ImageEnhance.Brightness(big_side).enhance(0.8)
-    big_side.putalpha(alpha)
-    alpha = small_side.split()[3]
-    small_side = ImageEnhance.Brightness(small_side).enhance(0.9)
-    small_side.putalpha(alpha)
-    alpha = base.split()[3]
-    base_d = ImageEnhance.Brightness(base).enhance(0.8)
-    base_d.putalpha(alpha)
-    
-    # compose
-    base = self.transform_image_top(base)
-    base_d = self.transform_image_top(base_d)
-    small_base = self.transform_image_top(small_base)
-    top = self.transform_image_top(top)
-    
-    alpha_over(img, base_d, (0,12), base_d)
-    alpha_over(img, base_d, (0,11), base_d)
-    alpha_over(img, base_d, (0,10), base_d)
-    alpha_over(img, small_base, (0,10), small_base)
-    
-    alpha_over(img, top, (0,0), top)
-    
-    left_side = self.transform_image_side(left_side)
-    right_side = self.transform_image_side(right_side).transpose(Image.FLIP_LEFT_RIGHT)
-    
-    alpha_over(img, left_side, left_pos, left_side)
-    alpha_over(img, right_side, right_pos, right_side)
-    
-    return img
+# blockRubLeaves=242, handled further up as leaves
+# block(blockid=242, top_index=22)
+
+# blockRubSapling=241, handled further up as saplings
+# block(blockid=241, top_index=22)
+
+# blockRubWood=243, looks like jungle wood
+block(blockid=243, top_index=153)
+
+# blockRubber=234, looks like black wool
+block(blockid=234, top_index=113)
+
+# blockScaffold=220, looks like regular wooden planks
+block(blockid=220, top_index=4)
+
+# blockWall=221, looks like white wool. Thinking of handling this like wool, but can't find the data values for IC2
+block(blockid=221, top_index=64)
+
+
+# BUILDCRAFT BLOCKS START HERE
+# Iron Block texture (22) for everything by default, for now
+
+# autoWorkbench.id=152, looks like crafting table
+
+# builder.id=157
+block(blockid=157, top_index=22)
+
+# cobblestonePipe.id=159, looks like cobblestone. I'm gonna handle all pipes as if they're blocks made out of their base material
+block(blockid=233, top_index=1)
+
+# diamondPipe.id=149
+block(blockid=233, top_index=25)
+
+# dockingStation.id=168
+block(blockid=233, top_index=22)
+
+# drill.id=151
+block(blockid=233, top_index=22)
+
+# engine.id=161
+block(blockid=233, top_index=22)
+
+# filler.id=155
+block(blockid=233, top_index=22)
+
+# frame.id=160
+block(blockid=233, top_index=22)
+
+# goldenPipe.id=148
+block(blockid=233, top_index=23)
+
+# ironPipe.id=147
+block(blockid=233, top_index=22)
+
+# marker.id=154
+block(blockid=233, top_index=22)
+
+# miningWell.id=150
+block(blockid=233, top_index=22)
+
+# obsidianPipe.id=156
+block(blockid=233, top_index=37)
+
+# oilMoving.id=162, handled further up like colored moving water
+
+# oilStill.id=163, handled further up like colored still water
+
+# pipe.id=166
+block(blockid=233, top_index=22)
+
+# pump.id=164
+block(blockid=233, top_index=22)
+
+# quarry.id=153
+block(blockid=233, top_index=22)
+
+# refinery.id=167
+block(blockid=233, top_index=22)
+
+# stonePipe.id=146
+block(blockid=233, top_index=0)
+
+# tank.id=165, handled further up like glass
+
+# template.id=158
+block(blockid=233, top_index=22)
+
+# woodenPipe.id=145
+block(blockid=233, top_index=4)
