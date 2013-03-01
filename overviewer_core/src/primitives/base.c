@@ -92,8 +92,8 @@ base_draw(void *data, RenderState *state, PyObject *src, PyObject *mask, PyObjec
         (state->block == 2 && get_data(state, BLOCKS, state->x, state->y+1, state->z) != 78) ||
         /* water */
         state->block == 8 || state->block == 9 ||
-        /* leaves */
-        state->block == 18 ||
+        /* leaves - added ic2 and rp rubberwood*/        
+        state->block == 18 || state->block == 141 || state->block == 242 ||
         /* tallgrass, but not dead shrubs */
         (state->block == 31 && state->block_data != 0) ||
         /* pumpkin/melon stem, not fully grown. Fully grown stems
@@ -135,6 +135,14 @@ base_draw(void *data, RenderState *state, PyObject *src, PyObject *mask, PyObjec
                 flip_xy = 1;
             }
             break;
+        case 141:
+            /* leaves */
+            color_table = self->foliagecolor;
+            break;
+        case 242:
+            /* leaves */
+            color_table = self->foliagecolor;
+            break;        
         case 31:
             /* tall grass */
             color_table = self->grasscolor;

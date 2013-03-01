@@ -243,6 +243,47 @@ check_adjacent_blocks(RenderState *state, int x,int y,int z, unsigned short bloc
     return pdata;
 }
 
+unsigned char
+check_3d_adjacent_blocks(RenderState *state, int x,int y,int z, unsigned short blockid) {
+    /*
+     * Same as check_adjacent_blocks but adds an upper/lower bit
+     * for pipes
+     *
+     * This uses a binary number of 6 digits to encode the info:
+     *
+     * 0b123456:
+     * Bit:  1   2   3   4   5   6
+     * Side: +y  -y  +x  +z  -x  -z
+     * Values: bit = 0 -> The corresponding side block has different blockid
+     *         bit = 1 -> The corresponding side block has same blockid
+     * Example: if the bit1 is 1 that means that there is a block with 
+     * blockid in the side of the +x direction.
+     */
+        
+    unsigned char pdata=0;
+    
+    if (get_data(state, BLOCKS, x, y + 1, z) == blockid) {
+        pdata = pdata|(1 << 5);
+    }
+    if (get_data(state, BLOCKS, x, y - 1, z) == blockid) {
+        pdata = pdata|(1 << 4);
+    }        
+    if (get_data(state, BLOCKS, x + 1, y, z) == blockid) {
+        pdata = pdata|(1 << 3);
+    }        
+    if (get_data(state, BLOCKS, x, y, z + 1) == blockid) {
+        pdata = pdata|(1 << 2);
+    }
+    if (get_data(state, BLOCKS, x - 1, y, z) == blockid) {
+        pdata = pdata|(1 << 1);
+    }
+    if (get_data(state, BLOCKS, x, y, z - 1) == blockid) {
+        pdata = pdata|(1 << 0);
+    }
+    
+    return pdata;
+}
+
 
 unsigned char
 generate_pseudo_data(RenderState *state, unsigned char ancilData) {
@@ -365,11 +406,28 @@ generate_pseudo_data(RenderState *state, unsigned char ancilData) {
         /* return check adjacent blocks with air, bit inverted */
         return check_adjacent_blocks(state, x, y, z, 0) ^ 0x0f;
 
-    } else if ((state->block == 90) || (state->block == 113)) {
+    } else if ((state->block == 90) || (state->block == 113) || (state->block == 232) ) {
         /* portal and nether brick fences */
+        /* added ic2 iron fences */
         return check_adjacent_blocks(state, x, y, z, state->block);
 
-    } else if ((state->block == 64) || (state->block == 71)) {
+    } else if (state->block == 209) {
+        /* railcraft fence posts */
+        unsigned char final_data = 0;
+        
+        //printf("ancil: %u\n",ancilData);
+        
+        if (ancilData == 5) {
+            final_data = 16 | check_adjacent_blocks(state, x, y, z, state->block);
+        } else if (ancilData == 6 || ancilData == 0) {
+            final_data = 32 | check_adjacent_blocks(state, x, y, z, state->block);
+        } else {
+            final_data = ancilData;
+        }
+        
+        return final_data;
+    
+    } else if ((state->block == 64) || (state->block == 71) || (state->block == 229) ) {
         /* use bottom block data format plus one bit for top/down
          * block (0x8) and one bit for hinge position (0x10)
          */
@@ -395,14 +453,21 @@ generate_pseudo_data(RenderState *state, unsigned char ancilData) {
         
         }
         return data;
-    } else if (state->block == 139) { /* cobblestone and mossy cobbleston wall  */
-        /* check for walls and add one bit with the type of wall (mossy or cobblestone)*/
-        if (ancilData == 0x1) {
-            return check_adjacent_blocks(state, x, y, z, state->block) | 0x10;
-        } else {
-            return check_adjacent_blocks(state, x, y, z, state->block);
-        }
+    } else if (state->block == 160) { /* frames */
+        return check_3d_adjacent_blocks(state, x, y, z, state->block);
+    } else if (state->block == 166) { /* pipes */
+        // need to get type of pipe from tileentity here
+        return check_3d_adjacent_blocks(state, x, y, z, state->block);
     }
+    
+    //else if (state->block == 139) { /* cobblestone and mossy cobbleston wall  */
+        /* check for walls and add one bit with the type of wall (mossy or cobblestone)*/
+        //if (ancilData == 0x1) {
+        //    return check_adjacent_blocks(state, x, y, z, state->block) | 0x10;
+        //} else {
+        //    return check_adjacent_blocks(state, x, y, z, state->block);
+        //}
+    //}
 
 
     return 0;
@@ -543,13 +608,16 @@ chunk_render(PyObject *self, PyObject *args) {
                     /* block that need pseudo ancildata:
                      * grass, water, glass, chest, restone wire,
                      * ice, fence, portal, iron bars, glass panes */
+                    //removed 139
                     if ((state.block ==  2) || (state.block ==  9) ||
                         (state.block == 20) || (state.block == 54) ||
                         (state.block == 55) || (state.block == 64) ||
                         (state.block == 71) || (state.block == 79) ||
                         (state.block == 85) || (state.block == 90) ||
                         (state.block == 101) || (state.block == 102) ||
-                        (state.block == 113) || (state.block == 139)) {
+                        (state.block == 113) || (state.block == 209) ||
+                        (state.block == 232) || (state.block == 160) ||
+                        (state.block == 166) || (state.block == 229) ) {
                         ancilData = generate_pseudo_data(&state, ancilData);
                         state.block_pdata = ancilData;
                     } else {

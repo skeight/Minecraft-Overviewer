@@ -29,6 +29,10 @@ import functools
 import util
 from c_overviewer import alpha_over
 
+class TextureException(Exception):
+    "To be thrown when a texture is not found."
+    pass
+
 ##
 ## Textures object
 ##
@@ -56,7 +60,7 @@ class Textures(object):
     def __getstate__(self):
         # we must get rid of the huge image lists, and other images
         attributes = self.__dict__.copy()
-        for attr in ['terrain_images', 'blockmap', 'biome_grass_texture', 'watertexture', 'lavatexture', 'firetexture', 'portaltexture', 'lightcolor', 'grasscolor', 'foliagecolor', 'watercolor']:
+        for attr in ['terrain_images', 'rpworld_images', 'rpworlditems_images', 'rpbase1_images', 'rpcontrol1_images', 'rpmachine1_images', 'rplighting1_images', 'ic2block0_images', 'ic2bench_images', 'ic2cable_images', 'ic2machine_images', 'ic2machine2_images', 'ic2electric_images', 'ic2personal_images', 'ic2generator_images', 'ic2advmachine_images', 'railcraft_images', 'railtracks_images', 'bc_coreblock_images', 'bc_chunkloader_images', 'baseiron_images', 'basestone_images', 'basewood_images', 'trunkblue_images', 'trunkgreen_images', 'trunkorange_images', 'trunkred_images', 'trunkyellow_images', 'refinery_images', 'ee_factory_images', 'ironchests_images', 'compactsolar_images', 'codechickencore_images', 'codechickenrp_images', 'codechickenender_images', 'thermo_images', 'tubestuff_images', 'chunkloader_images', 'ccterrain_images', 'ccsensors_images', 'netherores_images', 'powerconvert_images', 'mffsmachine_images', 'mffsupgrade_images', 'blockmap', 'biome_grass_texture', 'watertexture', 'lavatexture', 'firetexture', 'portaltexture', 'lightcolor', 'grasscolor', 'foliagecolor', 'watercolor']:
             try:
                 del attributes[attr]
             except KeyError:
@@ -77,6 +81,69 @@ class Textures(object):
         # maps terrainids to 16x16 images
         self.terrain_images = self._split_terrain(self.load_image("terrain.png"))
         
+        #load all the mod textures -
+        #I included the paths to ensure we are loading the right image and
+        #not depending on path search order since so many of these have the same names
+        self.rpworld_images = self._split_terrain(self.load_image("eloraam/world/world1.png"))
+        self.rpworlditems_images = self._split_terrain(self.load_image("eloraam/world/worlditems1.png"))
+        self.rpbase1_images = self._split_terrain(self.load_image("eloraam/base/base1.png"))
+        self.rpcontrol1_images = self._split_terrain(self.load_image("eloraam/control/control1.png"))
+        self.rpmachine1_images = self._split_terrain(self.load_image("eloraam/machine/machine1.png"))
+        self.rplighting1_images = self._split_terrain(self.load_image("eloraam/lighting/lighting1.png"))
+    
+        self.ic2block0_images = self._split_terrain(self.load_image("ic2/sprites/block_0.png"))
+        self.ic2bench_images = self._split_terrain(self.load_image("ic2/sprites/ChargingBench.png"))
+        self.ic2cable_images = self._split_terrain(self.load_image("ic2/sprites/block_cable.png"))
+        self.ic2machine_images = self._split_terrain(self.load_image("ic2/sprites/block_machine.png"))
+        self.ic2machine2_images = self._split_terrain(self.load_image("ic2/sprites/block_machine2.png"))
+        self.ic2electric_images = self._split_terrain(self.load_image("ic2/sprites/block_electric.png"))
+        self.ic2personal_images = self._split_terrain(self.load_image("ic2/sprites/block_personal.png"))
+        self.ic2generator_images = self._split_terrain(self.load_image("ic2/sprites/block_generator.png"))
+        self.ic2advmachine_images = self._split_terrain(self.load_image("ic2/sprites/block_advmachine.png"))
+
+        self.railcraft_images = self._split_terrain(self.load_image("railcraft/textures/railcraft.png"))
+        self.railtracks_images = self._split_terrain(self.load_image("railcraft/textures/tracks.png"))
+        
+        self.bc_coreblock_images = self._split_terrain(self.load_image("net/minecraft/src/buildcraft/core/gui/block_textures.png"))
+        self.bc_chunkloader_images = self._split_terrain(self.load_image("net/minecraft/src/buildcraft/additionalpipes/gui/chunkloader.png"))        
+        #all of these bc textures are different, don't _split_terrain them
+        self.baseiron_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/base_iron.png")
+        self.basestone_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/base_stone.png")
+        self.basewood_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/base_wood.png")
+        self.trunkblue_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/trunk_blue.png")
+        self.trunkgreen_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/trunk_green.png")
+        self.trunkred_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/trunk_red.png")
+        self.trunkyellow_images = self.load_image("net/minecraft/src/buildcraft/energy/gui/trunk_yellow.png")
+        self.refinery_images = self.load_image("net/minecraft/src/buildcraft/factory/gui/refinery.png")
+        
+        
+        self.ee_factory_images = self._split_terrain(self.load_image("ee/art/sprites/eqexterra.png"))
+        
+        self.ironchests_images = self._split_terrain(self.load_image("cpw/mods/ironchest/sprites/block_textures.png"))
+        self.compactsolar_images = self._split_terrain(self.load_image("cpw/mods/compactsolars/sprites/block_textures.png"))
+        
+        self.codechickencore_images = self._split_terrain(self.load_image("codechicken/wirelessredstone/core/wireless1.png"))
+        self.codechickenrp_images = self._split_terrain(self.load_image("codechicken/wirelessredstone/redpower/wireless1.png"))
+        #ender chest not _split
+        self.codechickenender_images = self.load_image("codechicken/enderstorage/EnderChest.png")
+
+        self.thermo_images = self._split_terrain(self.load_image("img/texture_thermo.png"))
+
+        self.tubestuff_images = self._split_terrain(self.load_image("immibis/tubestuff/blocks.png"))
+        self.chunkloader_images = self._split_terrain(self.load_image("immibis/chunkloader/world.png"))
+
+        self.ccterrain_images = self._split_terrain(self.load_image("terrain/ccterrain.png"))
+        
+        self.ccsensors_images = self._split_terrain(self.load_image("ccSensors/textures/terrain.png"))
+        
+        self.netherores_images = self._split_terrain(self.load_image("NetherOresSprites/block0.png"))
+
+        self.powerconvert_images = self._split_terrain(self.load_image("PowerConverterSprites/terrain_0.png"))
+        
+        #modular forcefield system
+        self.mffsmachine_images = self._split_terrain(self.load_image("mffs_grafik/machines.png"))
+        self.mffsupgrade_images = self._split_terrain(self.load_image("mffs_grafik/upgrades.png"))
+
         # generate biome grass mask
         self.biome_grass_texture = self.build_block(self.terrain_images[0], self.terrain_images[38])
         
@@ -131,7 +198,7 @@ class Textures(object):
 
         # a list of subdirectories to search for a given file,
         # after the obvious '.'
-        search_dirs = ['anim', 'misc', 'environment']
+        search_dirs = ['anim', 'misc', 'environment', 'item']
         search_zip_paths = [filename,] + [d + '/' + filename for d in search_dirs]
         def search_dir(base):
             """Search the given base dir for filename, in search_dirs."""
@@ -152,7 +219,7 @@ class Textures(object):
                     for packfilename in search_zip_paths:
                         try:
                             pack.getinfo(packfilename)
-                            if verbose: logging.info("Found %s in '%s'", packfilename, nery.find_file_local_path)
+                            #if verbose: logging.info("Found %s in '%s'", packfilename, nery.find_file_local_path)
                             return pack.open(packfilename)
                         except (KeyError, IOError):
                             pass
@@ -213,7 +280,7 @@ class Textures(object):
                 if verbose: logging.info("Found %s in '%s'", filename, path)
                 return open(path, mode)
 
-        raise IOError("Could not find the file `{0}'. Try specifying the 'texturepath' option in your config file. Set it to the directory where I can find {0}.".format(filename))
+        raise TextureException("Could not find the file `{0}'. Try specifying the 'texturepath' option in your config file. Set it to the directory where I can find {0}. Also see <http://docs.overviewer.org/en/latest/running/#installing-the-textures>".format(filename))
 
     def load_image(self, filename):
         """Returns an image object"""
@@ -231,7 +298,7 @@ class Textures(object):
             # try the MCPatcher case first
             watertexture = self.load_image("custom_water_still.png")
             watertexture = watertexture.crop((0, 0, watertexture.size[0], watertexture.size[0]))
-        except IOError:
+        except TextureException:
             watertexture = self.load_image("water.png")
         self.watertexture = watertexture
         return watertexture
@@ -246,7 +313,7 @@ class Textures(object):
             # try the MCPatcher lava first, in case it's present
             lavatexture = self.load_image("custom_lava_still.png")
             lavatexture = lavatexture.crop((0, 0, lavatexture.size[0], lavatexture.size[0]))
-        except IOError:
+        except TextureException:
             lavatexture = self.load_image("lava.png")
         self.lavatexture = lavatexture
         return lavatexture
@@ -264,7 +331,7 @@ class Textures(object):
             firetextureEW = self.load_image("custom_fire_e_w.png")
             firetextureEW = firetextureEW.crop((0, 0, firetextureEW.size[0], firetextureEW.size[0]))
             firetexture = (firetextureNS,firetextureEW)
-        except IOError:
+        except TextureException:
             fire = self.load_image("fire.png")
             firetexture = (fire, fire)
         self.firetexture = firetexture
@@ -280,7 +347,7 @@ class Textures(object):
             # try the MCPatcher case first
             portaltexture = self.load_image("custom_portal.png")
             portaltexture = portaltexture.crop((0, 0, portaltexture.size[0], portaltexture.size[1]))
-        except IOError:
+        except TextureException:
             portaltexture = self.load_image("portal.png")
         self.portaltexture = portaltexture
         return portaltexture
@@ -345,9 +412,8 @@ class Textures(object):
     def transform_image_top(img):
         """Takes a PIL image and rotates it left 45 degrees and shrinks the y axis
         by a factor of 2. Returns the resulting image, which will be 24x12 pixels
-
         """
-
+        
         # Resize to 17x17, since the diagonal is approximately 24 pixels, a nice
         # even number that can be split in half twice
         img = img.resize((17, 17), Image.ANTIALIAS)
@@ -772,8 +838,7 @@ def wooden_planks(self, blockid, data):
     if data == 3: # jungle wood
         return self.build_block(self.terrain_images[199],self.terrain_images[199])
 
-# added IC2 rubber sapling
-@material(blockid=[6,242], data=range(16), transparent=True)
+@material(blockid=6, data=range(16), transparent=True)
 def saplings(self, blockid, data):
     # usual saplings
     tex = self.terrain_images[15]
@@ -789,29 +854,19 @@ def saplings(self, blockid, data):
 # bedrock
 block(blockid=7, top_index=17)
 
-# Added BC moving Oil
-@material(blockid=[8,162], data=range(16), fluid=True, transparent=True, nospawn=True)
+@material(blockid=8, data=range(16), fluid=True, transparent=True, nospawn=True)
 def water(self, blockid, data):
-    if blockid == 8: 		# regular moving water
-		watertex = self.load_water()
-    elif blockid == 162:	# BC moving Oil
-		watertex = Image.new("RGBA", (16,16), (0,0,0,255))
+    watertex = self.load_water()
     return self.build_block(watertex, watertex)
 
-# other water, glass, and ice (no inner surfaces), added IC2 reinforced glass, added BC still Oil and tanks
+# other water, glass, and ice (no inner surfaces)
 # uses pseudo-ancildata found in iterate.c
-@material(blockid=[9, 20, 79, 163, 165, 230], data=range(32), fluid=(9,), transparent=True, nospawn=True, solid=(79, 20))
+@material(blockid=[9, 20, 79], data=range(32), fluid=(9,), transparent=True, nospawn=True, solid=(79, 20))
 def no_inner_surfaces(self, blockid, data):
     if blockid == 9:
         texture = self.load_water()
     elif blockid == 20:
         texture = self.terrain_images[49]
-    elif blockid == 163: # BC still Oil here
-		texture = Image.new("RGBA", (16,16), (0,0,0,255))
-    elif blockid == 165: # BC tanks here
-		texture = self.terrain_images[49]
-    elif blockid == 230: # IC2 Alloy Glass here
-		texture = self.terrain_images[49]
     else:
         texture = self.terrain_images[67]
         
@@ -863,20 +918,38 @@ block(blockid=15, top_index=33)
 # coal ore
 block(blockid=16, top_index=34)
 
-@material(blockid=17, data=range(4), solid=True)
+@material(blockid=17, data=range(12), solid=True)
 def wood(self, blockid, data):
-    top = self.terrain_images[21]
-    if data == 0: # normal
-        return self.build_block(top, self.terrain_images[20])
-    if data == 1: # birch
-        return self.build_block(top, self.terrain_images[116])
-    if data == 2: # pine
-        return self.build_block(top, self.terrain_images[117])
-    if data == 3: # jungle wood
-        return self.build_block(top, self.terrain_images[153])
+    # extract orientation and wood type frorm data bits
+    wood_type = data & 3
+    wood_orientation = data & 12
+    if self.rotation == 1:
+        if wood_orientation == 4: wood_orientation = 8
+        elif wood_orientation == 8: wood_orientation = 4
+    elif self.rotation == 3:
+        if wood_orientation == 4: wood_orientation = 8
+        elif wood_orientation == 8: wood_orientation = 4
 
-# added IC2 rubber leaves
-@material(blockid=[18,242], data=range(16), transparent=True, solid=True)
+    # choose textures
+    top = self.terrain_images[21]
+    if wood_type == 0: # normal
+        side = self.terrain_images[20]
+    if wood_type == 1: # birch
+        side = self.terrain_images[116]
+    if wood_type == 2: # pine
+        side = self.terrain_images[117]
+    if wood_type == 3: # jungle wood
+        side = self.terrain_images[153]
+
+    # choose orientation and paste textures
+    if wood_orientation == 0:
+        return self.build_block(top, side)
+    elif wood_orientation == 4: # east-west orientation
+        return self.build_full_block(side.rotate(90), None, None, top, side.rotate(90))
+    elif wood_orientation == 8: # north-south orientation
+        return self.build_full_block(side, None, None, side.rotate(270), top)
+
+@material(blockid=18, data=range(16), transparent=True, solid=True)
 def leaves(self, blockid, data):
     # mask out the bits 4 and 8
     # they are used for player placed and check-for-decay blocks
@@ -1412,7 +1485,7 @@ block(blockid=48, top_index=36)
 block(blockid=49, top_index=37)
 
 # torch, redstone torch (off), redstone torch(on)
-@material(blockid=[50, 75, 76], data=[1, 2, 3, 4, 5], transparent=True)
+@material(blockid=[50, 75, 76, 129, 154, 215], data=[0, 1, 2, 3, 4, 5], transparent=True)
 def torches(self, blockid, data):
     # first, rotations
     if self.rotation == 1:
@@ -1436,6 +1509,12 @@ def torches(self, blockid, data):
         small = self.terrain_images[80]
     elif blockid == 75: # off redstone torch
         small = self.terrain_images[115]
+    elif blockid == 129: #interdiction torch
+        small = self.ee_factory_images[16]
+    elif blockid == 215: #ccsensor
+        small = self.ccsensors_images[8]
+    elif blockid == 154: #landmark
+        small = self.bc_coreblock_images[57]
     else: # on redstone torch
         small = self.terrain_images[99]
         
@@ -1465,7 +1544,7 @@ def torches(self, blockid, data):
         torch = torch.rotate(-rotation, Image.NEAREST)
         img = self.build_full_block(None, None, None, None, torch, None)
         
-    elif data == 5: # standing on the floor
+    else: # standing on the floor - also for data 0 and 5
         # compose a "3d torch".
         img = Image.new("RGBA", (24,24), self.bgcolor)
         
@@ -1478,6 +1557,9 @@ def torches(self, blockid, data):
         alpha_over(img, small_crop, (6,6))
         alpha_over(img, small_crop, (7,6))
         alpha_over(img, slice, (7,7))
+
+        if blockid == 154 and data == 0: #upside down landmark
+            img = img.rotate(180, Image.NEAREST)
         
     return img
 
@@ -1499,10 +1581,10 @@ def fire(self, blockid, data):
     return img
 
 # monster spawner
-block(blockid=52, top_index=34, transparent=True)
+block(blockid=52, top_index=65, transparent=True)
 
-# wooden, cobblestone, red brick, stone brick and netherbrick stairs.
-@material(blockid=[53,67,108,109,114], data=range(8), transparent=True, solid=True, nospawn=True)
+# wooden, cobblestone, red brick, stone brick, netherbrick, sandstone, spruce, birch and jungle stairs.
+@material(blockid=[53,67,108,109,114,128], data=range(8), transparent=True, solid=True, nospawn=True)
 def stairs(self, blockid, data):
 
     # first, rotations
@@ -1536,12 +1618,27 @@ def stairs(self, blockid, data):
         texture = self.terrain_images[54]
     elif blockid == 114: # netherbrick stairs
         texture = self.terrain_images[224]
-    
+    elif blockid == 128: # sandstone stairs
+        texture = self.terrain_images[192]
+    #elif blockid == 134: # spruce wood stairs
+    #    texture = self.terrain_images[198]
+    #elif blockid == 135: # birch wood  stairs
+    #    texture = self.terrain_images[214]
+    #elif blockid == 136: # jungle good stairs
+    #    texture = self.terrain_images[199]
+
+
     side = texture.copy()
     half_block_u = texture.copy() # up, down, left, right
     half_block_d = texture.copy()
     half_block_l = texture.copy()
     half_block_r = texture.copy()
+
+    # sandstone stairs have spcial top texture
+    if blockid == 128:
+        half_block_u = self.terrain_images[176].copy()
+        half_block_d = self.terrain_images[176].copy()
+        texture = self.terrain_images[176].copy()
 
     # generate needed geometries
     ImageDraw.Draw(side).rectangle((0,0,7,6),outline=(0,0,0,0),fill=(0,0,0,0))
@@ -1620,50 +1717,194 @@ def stairs(self, blockid, data):
         
     return img
 
-# normal and locked chest (locked was the one used in april fools' day)
-# uses pseudo-ancildata found in iterate.c
-@material(blockid=[54,95], data=range(12), solid=True)
+# normal, locked (used in april's fool day) and ender chests chests
+@material(blockid=[54,95], data=range(30), transparent = True)
 def chests(self, blockid, data):
-    # First two bits of the pseudo data store if it's a single chest
-    # or it's a double chest, first half or second half (left to right).
-    # The last two bits store the orientation.
+    # the first 3 bits are the orientation as stored in minecraft, 
+    # bits 0x8 and 0x10 indicate which half of the double chest is it.
     
-    # No need for rotation stuff, uses pseudo data and rotates with the map
+    # first, do the rotation if needed
+    orientation_data = data & 7
+    if self.rotation == 1:
+        if orientation_data == 2: data = 5 | (data & 24)
+        elif orientation_data == 3: data = 4 | (data & 24)
+        elif orientation_data == 4: data = 2 | (data & 24)
+        elif orientation_data == 5: data = 3 | (data & 24)
+    elif self.rotation == 2:
+        if orientation_data == 2: data = 3 | (data & 24)
+        elif orientation_data == 3: data = 2 | (data & 24)
+        elif orientation_data == 4: data = 5 | (data & 24)
+        elif orientation_data == 5: data = 4 | (data & 24)
+    elif self.rotation == 3:
+        if orientation_data == 2: data = 4 | (data & 24)
+        elif orientation_data == 3: data = 5 | (data & 24)
+        elif orientation_data == 4: data = 3 | (data & 24)
+        elif orientation_data == 5: data = 2 | (data & 24)
+    
+    if blockid == 95 and not data in [2,3,4,5]: return None
+        # iterate.c will only return the ancil data (without pseudo 
+        # ancil data) for locked and ender chests, so only 
+        # ancilData = 2,3,4,5 are used for this blockids
+    
+    if data & 24 == 0:
+        t = self.load_image("chest.png")
 
-    top = self.terrain_images[25]
-    side = self.terrain_images[26]
+        # the textures is no longer in terrain.png, get it from 
+        # item/chest.png and get by cropping all the needed stuff
+        if t.size != (64,64): t = t.resize((64,64), Image.ANTIALIAS)
+        # top
+        top = t.crop((14,0,28,14))
+        top.load() # every crop need a load, crop is a lazy operation
+                   # see PIL manual
+        img = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(img,top,(1,1))
+        top = img
+        # front
+        front_top = t.crop((14,14,28,19))
+        front_top.load()
+        front_bottom = t.crop((14,34,28,43))
+        front_bottom.load()
+        front_lock = t.crop((1,0,3,4))
+        front_lock.load()
+        front = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(front,front_top, (1,1))
+        alpha_over(front,front_bottom, (1,6))
+        alpha_over(front,front_lock, (7,3))
+        # left side
+        # left side, right side, and back are esentially the same for
+        # the default texture, we take it anyway just in case other
+        # textures make use of it.
+        side_l_top = t.crop((0,14,14,19))
+        side_l_top.load()
+        side_l_bottom = t.crop((0,34,14,43))
+        side_l_bottom.load()
+        side_l = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(side_l,side_l_top, (1,1))
+        alpha_over(side_l,side_l_bottom, (1,6))
+        # right side
+        side_r_top = t.crop((28,14,43,20))
+        side_r_top.load()
+        side_r_bottom = t.crop((28,33,42,43))
+        side_r_bottom.load()
+        side_r = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(side_r,side_l_top, (1,1))
+        alpha_over(side_r,side_l_bottom, (1,6))
+        # back
+        back_top = t.crop((42,14,56,18))
+        back_top.load()
+        back_bottom = t.crop((42,33,56,43))
+        back_bottom.load()
+        back = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(back,side_l_top, (1,1))
+        alpha_over(back,side_l_bottom, (1,6))
 
-    if data & 12 == 0: # single chest
-        front = self.terrain_images[27]
-        back = self.terrain_images[26]
-
-    elif data & 12 == 4: # double, first half
-        front = self.terrain_images[41]
-        back = self.terrain_images[57]
-
-    elif data & 12 == 8: # double, second half
-        front = self.terrain_images[42]
-        back = self.terrain_images[58]
-
-    else: # just in case
-        front = self.terrain_images[25]
-        side = self.terrain_images[25]
-        back = self.terrain_images[25]
-
-    if data & 3 == 0: # facing west
-        img = self.build_full_block(top, None, None, side, front)
-
-    elif data & 3 == 1: # north
-        img = self.build_full_block(top, None, None, front, side)
-
-    elif data & 3 == 2: # east
-        img = self.build_full_block(top, None, None, side, back)
-
-    elif data & 3 == 3: # south
-        img = self.build_full_block(top, None, None, back, side)
-        
     else:
-        img = self.build_full_block(top, None, None, back, side)
+        # large chest
+        # the textures is no longer in terrain.png, get it from 
+        # item/chest.png and get all the needed stuff
+        t = self.load_image("largechest.png")
+        if t.size != (128,64): t = t.resize((128,64), Image.ANTIALIAS)
+        # top
+        top = t.crop((14,0,44,14))
+        top.load()
+        img = Image.new("RGBA", (32,16), self.bgcolor)
+        alpha_over(img,top,(1,1))
+        top = img
+        # front
+        front_top = t.crop((14,14,44,18))
+        front_top.load()
+        front_bottom = t.crop((14,33,44,43))
+        front_bottom.load()
+        front_lock = t.crop((1,0,3,5))
+        front_lock.load()
+        front = Image.new("RGBA", (32,16), self.bgcolor)
+        alpha_over(front,front_top,(1,1))
+        alpha_over(front,front_bottom,(1,5))
+        alpha_over(front,front_lock,(15,3))
+        # left side
+        side_l_top = t.crop((0,14,14,18))
+        side_l_top.load()
+        side_l_bottom = t.crop((0,33,14,43))
+        side_l_bottom.load()
+        side_l = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(side_l,side_l_top, (1,1))
+        alpha_over(side_l,side_l_bottom,(1,5))
+        # right side
+        side_r_top = t.crop((44,14,58,18))
+        side_r_top.load()
+        side_r_bottom = t.crop((44,33,58,43))
+        side_r_bottom.load()
+        side_r = Image.new("RGBA", (16,16), self.bgcolor)
+        alpha_over(side_r,side_r_top, (1,1))
+        alpha_over(side_r,side_r_bottom,(1,5))
+        # back
+        back_top = t.crop((58,14,88,18))
+        back_top.load()
+        back_bottom = t.crop((58,33,88,43))
+        back_bottom.load()
+        back = Image.new("RGBA", (32,16), self.bgcolor)
+        alpha_over(back,back_top,(1,1))
+        alpha_over(back,back_bottom,(1,5))
+        
+
+        if data & 24 == 8: # double chest, first half
+            top = top.crop((0,0,16,16))
+            top.load()
+            front = front.crop((0,0,16,16))
+            front.load()
+            back = back.crop((0,0,16,16))
+            back.load()
+            #~ side = side_l
+
+        elif data & 24 == 16: # double, second half
+            top = top.crop((16,0,32,16))
+            top.load()
+            front = front.crop((16,0,32,16))
+            front.load()
+            back = back.crop((16,0,32,16))
+            back.load()
+            #~ side = side_r
+
+        else: # just in case
+            return None
+
+    # compose the final block
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    if data & 7 == 2: # north
+        side = self.transform_image_side(side_r)
+        alpha_over(img, side, (1,7))
+        back = self.transform_image_side(back)
+        alpha_over(img, back.transpose(Image.FLIP_LEFT_RIGHT), (11,7))
+        front = self.transform_image_side(front)
+        top = self.transform_image_top(top.rotate(180))
+        alpha_over(img, top, (0,2))
+
+    elif data & 7 == 3: # south
+        side = self.transform_image_side(side_l)
+        alpha_over(img, side, (1,7))
+        front = self.transform_image_side(front).transpose(Image.FLIP_LEFT_RIGHT)
+        top = self.transform_image_top(top.rotate(180))
+        alpha_over(img, top, (0,2))
+        alpha_over(img, front,(11,7))
+
+    elif data & 7 == 4: # west
+        side = self.transform_image_side(side_r)
+        alpha_over(img, side.transpose(Image.FLIP_LEFT_RIGHT), (11,7))
+        front = self.transform_image_side(front)
+        alpha_over(img, front,(1,7))
+        top = self.transform_image_top(top.rotate(270))
+        alpha_over(img, top, (0,2))
+
+    elif data & 7 == 5: # east
+        back = self.transform_image_side(back)
+        side = self.transform_image_side(side_l).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over(img, side, (11,7))
+        alpha_over(img, back, (1,7))
+        top = self.transform_image_top(top.rotate(270))
+        alpha_over(img, top, (0,2))
+        
+    else: # just in case
+        img = None
 
     return img
 
@@ -1752,9 +1993,9 @@ block(blockid=56, top_index=50)
 # diamond block
 block(blockid=57, top_index=24)
 
-# crafting table, added BC auto workbench
+# crafting table
 # needs two different sides
-@material(blockid=[58,152], solid=True, nodata=True)
+@material(blockid=58, solid=True, nodata=True)
 def crafting_table(self, blockid, data):
     top = self.terrain_images[43]
     side3 = self.terrain_images[43+16]
@@ -1840,7 +2081,7 @@ def signpost(self, blockid, data):
 
 # wooden and iron door, added IC2 door
 # uses pseudo-ancildata found in iterate.c
-@material(blockid=[64,71,228], data=range(32), transparent=True)
+@material(blockid=[64,71,229], data=range(32), transparent=True)
 def door(self, blockid, data):
     #Masked to not clobber block top/bottom & swung info
     if self.rotation == 1:
@@ -1860,9 +2101,19 @@ def door(self, blockid, data):
         elif (data & 0b00011) == 3: data = data & 0b11100 | 2
 
     if data & 0x8 == 0x8: # top of the door
-        raw_door = self.terrain_images[81 if blockid == 64 else 82]
+        if blockid == 64:
+            raw_door = self.terrain_images[81]
+        elif blockid == 229:
+            raw_door = self.ic2block0_images[14]
+        else:            
+            raw_door = self.terrain_images[82]
     else: # bottom of the door
-        raw_door = self.terrain_images[97 if blockid == 64 else 98]
+        if blockid == 64:
+            raw_door = self.terrain_images[97]
+        elif blockid == 229:
+            raw_door = self.ic2block0_images[15]
+        else:            
+            raw_door = self.terrain_images[98]
     
     # if you want to render all doors as closed, then force
     # force closed to be True
@@ -2239,6 +2490,7 @@ def pressure_plate(self, blockid, data):
 # normal and glowing redstone ore
 block(blockid=[73, 74], top_index=51)
 
+# stone button 
 @material(blockid=77, data=range(16), transparent=True)
 def buttons(self, blockid, data):
 
@@ -2262,7 +2514,10 @@ def buttons(self, blockid, data):
         elif data == 3: data = 1
         elif data == 4: data = 2
 
+    #if blockid == 77:
     t = self.terrain_images[1].copy()
+    #else:
+        #t = self.terrain_images[4].copy()
 
     # generate the texture for the button
     ImageDraw.Draw(t).rectangle((0,0,15,5),outline=(0,0,0,0),fill=(0,0,0,0))
@@ -2375,11 +2630,26 @@ def jukebox(self, blockid, data):
 
 # nether and normal fences, added IC2 fence
 # uses pseudo-ancildata found in iterate.c
-@material(blockid=[85, 113,232], data=range(16), transparent=True, nospawn=True)
+@material(blockid=[85,113,209,232], data=range(64), transparent=True, nospawn=True)
 def fence(self, blockid, data):
     # no need for rotations, it uses pseudo data.
     # create needed images for Big stick fence
-    if blockid == 85: # normal fence
+    
+    #fence is called by the the railcraft_controls function below for 209 entries
+    #keep these 209 entries here and first - they are needed! :)
+    if blockid == 209 and (data & 16) == 16:
+        fence_top = self.railcraft_images[87].copy()
+        fence_side = self.railcraft_images[87].copy()
+        fence_small_side = self.railcraft_images[87].copy()
+    elif blockid == 209 and (data & 32) == 32:
+        fence_top = self.railcraft_images[103].copy()
+        fence_side = self.railcraft_images[103].copy()
+        fence_small_side = self.railcraft_images[103].copy()
+    elif blockid == 232:
+        fence_top = self.ic2block0_images[1].copy()
+        fence_side = self.ic2block0_images[1].copy()
+        fence_small_side = self.ic2block0_images[1].copy()        
+    elif blockid == 85: # normal fence
         fence_top = self.terrain_images[4].copy()
         fence_side = self.terrain_images[4].copy()
         fence_small_side = self.terrain_images[4].copy()
@@ -2535,32 +2805,126 @@ def portal(self, blockid, data):
     return img
 
 # cake!
-# TODO is rendered un-bitten
 @material(blockid=92, data=range(6), transparent=True, nospawn=True)
 def cake(self, blockid, data):
-
-    # choose textures for cake
-    top = self.terrain_images[121]
-    side = self.terrain_images[122]
-    top = self.transform_image_top(top)
-    side = self.transform_image_side(side)
-    otherside = side.transpose(Image.FLIP_LEFT_RIGHT)
     
-    # darken sides slightly
-    sidealpha = side.split()[3]
-    side = ImageEnhance.Brightness(side).enhance(0.9)
-    side.putalpha(sidealpha)
-    othersidealpha = otherside.split()[3]
-    otherside = ImageEnhance.Brightness(otherside).enhance(0.8)
-    otherside.putalpha(othersidealpha)
+    # cake textures
+    top = self.terrain_images[121].copy()
+    side = self.terrain_images[122].copy()
+    fullside = side.copy()
+    inside = self.terrain_images[123]
     
     img = Image.new("RGBA", (24,24), self.bgcolor)
+    if data == 0: # unbitten cake
+        top = self.transform_image_top(top)
+        side = self.transform_image_side(side)
+        otherside = side.transpose(Image.FLIP_LEFT_RIGHT)
+        
+        # darken sides slightly
+        sidealpha = side.split()[3]
+        side = ImageEnhance.Brightness(side).enhance(0.9)
+        side.putalpha(sidealpha)
+        othersidealpha = otherside.split()[3]
+        otherside = ImageEnhance.Brightness(otherside).enhance(0.8)
+        otherside.putalpha(othersidealpha)
+        
+        # composite the cake
+        alpha_over(img, side, (1,6), side)
+        alpha_over(img, otherside, (11,7), otherside) # workaround, fixes a hole
+        alpha_over(img, otherside, (12,6), otherside)
+        alpha_over(img, top, (0,6), top)
     
-    # composite the cake
-    alpha_over(img, side, (1,6), side)
-    alpha_over(img, otherside, (11,7), otherside) # workaround, fixes a hole
-    alpha_over(img, otherside, (12,6), otherside)
-    alpha_over(img, top, (0,6), top)
+    else:
+        # cut the textures for a bitten cake
+        coord = int(16./6.*data)
+        ImageDraw.Draw(side).rectangle((16 - coord,0,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
+        ImageDraw.Draw(top).rectangle((0,0,coord,16),outline=(0,0,0,0),fill=(0,0,0,0))
+
+        # the bitten part of the cake always points to the west
+        # composite the cake for every north orientation
+        if self.rotation == 0: # north top-left
+            # create right side
+            rs = self.transform_image_side(side).transpose(Image.FLIP_LEFT_RIGHT)
+            # create bitten side and its coords
+            deltax = 2*data
+            deltay = -1*data
+            if data == 3: deltax += 1 # special case fixing pixel holes
+            ls = self.transform_image_side(inside)
+            # create top side
+            t = self.transform_image_top(top)
+            # darken sides slightly
+            sidealpha = ls.split()[3]
+            ls = ImageEnhance.Brightness(ls).enhance(0.9)
+            ls.putalpha(sidealpha)
+            othersidealpha = rs.split()[3]
+            rs = ImageEnhance.Brightness(rs).enhance(0.8)
+            rs.putalpha(othersidealpha)
+            # compose the cake
+            alpha_over(img, rs, (12,6), rs)
+            alpha_over(img, ls, (1 + deltax,6 + deltay), ls)
+            alpha_over(img, t, (0,6), t)
+
+        elif self.rotation == 1: # north top-right
+            # bitten side not shown
+            # create left side
+            ls = self.transform_image_side(side.transpose(Image.FLIP_LEFT_RIGHT))
+            # create top
+            t = self.transform_image_top(top.rotate(-90))
+            # create right side
+            rs = self.transform_image_side(fullside).transpose(Image.FLIP_LEFT_RIGHT)
+            # darken sides slightly
+            sidealpha = ls.split()[3]
+            ls = ImageEnhance.Brightness(ls).enhance(0.9)
+            ls.putalpha(sidealpha)
+            othersidealpha = rs.split()[3]
+            rs = ImageEnhance.Brightness(rs).enhance(0.8)
+            rs.putalpha(othersidealpha)
+            # compose the cake
+            alpha_over(img, ls, (2,6), ls)
+            alpha_over(img, t, (0,6), t)
+            alpha_over(img, rs, (12,6), rs)
+
+        elif self.rotation == 2: # north bottom-right
+            # bitten side not shown
+            # left side
+            ls = self.transform_image_side(fullside)
+            # top
+            t = self.transform_image_top(top.rotate(180))
+            # right side
+            rs = self.transform_image_side(side.transpose(Image.FLIP_LEFT_RIGHT)).transpose(Image.FLIP_LEFT_RIGHT)
+            # darken sides slightly
+            sidealpha = ls.split()[3]
+            ls = ImageEnhance.Brightness(ls).enhance(0.9)
+            ls.putalpha(sidealpha)
+            othersidealpha = rs.split()[3]
+            rs = ImageEnhance.Brightness(rs).enhance(0.8)
+            rs.putalpha(othersidealpha)
+            # compose the cake
+            alpha_over(img, ls, (2,6), ls)
+            alpha_over(img, t, (1,6), t)
+            alpha_over(img, rs, (12,6), rs)
+
+        elif self.rotation == 3: # north bottom-left
+            # create left side
+            ls = self.transform_image_side(side)
+            # create top
+            t = self.transform_image_top(top.rotate(90))
+            # create right side and its coords
+            deltax = 12-2*data
+            deltay = -1*data
+            if data == 3: deltax += -1 # special case fixing pixel holes
+            rs = self.transform_image_side(inside).transpose(Image.FLIP_LEFT_RIGHT)
+            # darken sides slightly
+            sidealpha = ls.split()[3]
+            ls = ImageEnhance.Brightness(ls).enhance(0.9)
+            ls.putalpha(sidealpha)
+            othersidealpha = rs.split()[3]
+            rs = ImageEnhance.Brightness(rs).enhance(0.8)
+            rs.putalpha(othersidealpha)
+            # compose the cake
+            alpha_over(img, ls, (2,6), ls)
+            alpha_over(img, t, (1,6), t)
+            alpha_over(img, rs, (1 + deltax,6 + deltay), rs)
 
     return img
 
@@ -2711,7 +3075,7 @@ def repeater(self, blockid, data):
     
 # trapdoor
 # TODO the trapdoor is looks like a sprite when opened, that's not good
-@material(blockid=96, data=range(8), transparent=True, nospawn=True)
+@material(blockid=96, data=range(16), transparent=True, nospawn=True)
 def trapdoor(self, blockid, data):
 
     # rotation
@@ -2745,7 +3109,12 @@ def trapdoor(self, blockid, data):
             img = self.build_full_block(None, None, None, texture, None)
         
     elif data & 0x4 == 0: # closed trapdoor
-        img = self.build_full_block((texture, 12), None, None, texture, texture)
+        if data & 0x8 == 0x8: # is a top trapdoor
+            img = Image.new("RGBA", (24,24), self.bgcolor)
+            t = self.build_full_block((texture, 12), None, None, texture, texture)
+            alpha_over(img, t, (0,-9),t)
+        else: # is a bottom trapdoor
+            img = self.build_full_block((texture, 12), None, None, texture, texture)
     
     return img
 
@@ -3144,7 +3513,7 @@ def end_portal(self, blockid, data):
     return img
 
 # end portal frame
-@material(blockid=120, data=range(5), transparent=True)
+@material(blockid=120, data=range(8), transparent=True)
 def end_portal_frame(self, blockid, data):
     # The bottom 2 bits are oritation info but seems there is no
     # graphical difference between orientations
@@ -3169,6 +3538,88 @@ def end_portal_frame(self, blockid, data):
 
     return img
 
+# cocoa plant
+@material(blockid=127, data=range(12), transparent=True)
+def cocoa_plant(self, blockid, data):
+    orientation = data & 3
+    # rotation
+    if self.rotation == 1:
+        if orientation == 0: orientation = 1
+        elif orientation == 1: orientation = 2
+        elif orientation == 2: orientation = 3
+        elif orientation == 3: orientation = 0
+    elif self.rotation == 2:
+        if orientation == 0: orientation = 2
+        elif orientation == 1: orientation = 3
+        elif orientation == 2: orientation = 0
+        elif orientation == 3: orientation = 1
+    elif self.rotation == 3:
+        if orientation == 0: orientation = 3
+        elif orientation == 1: orientation = 0
+        elif orientation == 2: orientation = 1
+        elif orientation == 3: orientation = 2
+
+    size = data & 12
+    if size == 8: # big
+        t = self.terrain_images[168]
+        c_left = (0,3)
+        c_right = (8,3)
+        c_top = (5,2)
+    elif size == 4: # normal
+        t = self.terrain_images[169]
+        c_left = (-2,2)
+        c_right = (8,2)
+        c_top = (5,2)
+    elif size == 0: # small
+        t = self.terrain_images[170]
+        c_left = (-3,2)
+        c_right = (6,2)
+        c_top = (5,2)
+
+    # let's get every texture piece necessary to do this
+    stalk = t.copy()
+    ImageDraw.Draw(stalk).rectangle((0,0,11,16),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(stalk).rectangle((12,4,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
+    
+    top = t.copy() # warning! changes with plant size
+    ImageDraw.Draw(top).rectangle((0,7,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(top).rectangle((7,0,16,6),outline=(0,0,0,0),fill=(0,0,0,0))
+
+    side = t.copy() # warning! changes with plant size
+    ImageDraw.Draw(side).rectangle((0,0,6,16),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(side).rectangle((0,0,16,3),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(side).rectangle((0,14,16,16),outline=(0,0,0,0),fill=(0,0,0,0))
+    
+    # first compose the block of the cocoa plant
+    block = Image.new("RGBA", (24,24), self.bgcolor)
+    tmp = self.transform_image_side(side).transpose(Image.FLIP_LEFT_RIGHT)
+    alpha_over (block, tmp, c_right,tmp) # right side
+    tmp = tmp.transpose(Image.FLIP_LEFT_RIGHT)
+    alpha_over (block, tmp, c_left,tmp) # left side
+    tmp = self.transform_image_top(top)
+    alpha_over(block, tmp, c_top,tmp)
+    if size == 0:
+        # fix a pixel hole
+        block.putpixel((6,9), block.getpixel((6,10)))
+
+    # compose the cocoa plant
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    if orientation in (2,3): # south and west
+        tmp = self.transform_image_side(stalk).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over(img, block,(-1,-2), block)
+        alpha_over(img, tmp, (4,-2), tmp)
+        if orientation == 3:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    elif orientation in (0,1): # north and east
+        tmp = self.transform_image_side(stalk.transpose(Image.FLIP_LEFT_RIGHT))
+        alpha_over(img, block,(-1,5), block)
+        alpha_over(img, tmp, (2,12), tmp)
+        if orientation == 0:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+
+    return img
+
+
 # end stone
 block(blockid=121, top_index=175)
 
@@ -3183,179 +3634,1925 @@ block(blockid=123, top_index=211)
 block(blockid=124, top_index=212)
 
 
-# IC2 BLOCKS START HERE
-# Iron Block texture (22) for everything by default, for now
+###############################################
+#tekkit classic blocks
+###############################################
+## interdiction torch - added above with other torches (blockid=129)
+## landmark - added above with other torches (blockid=154)
+## reinforced door - added above with other doors (blockid=229) also added to iterate.c
+#marble/basalt
+@material(blockid=142, data=range(5), solid=True)
+def marble_basalt(self, blockid, data):
+    if data == 0: # marble
+        t = self.rpworld_images[16]
+    elif data == 1: # basalt "cooked"
+        t = self.rpworld_images[17]
+    elif data == 2: # marble brick
+        t = self.rpworld_images[18]
+    elif data == 3: # basalt cobble
+        t = self.rpworld_images[19]
+    elif data == 4: # basalt brick
+        t = self.rpworld_images[20]
 
-# blockAlloy=231
-block(blockid=231, top_index=22)
+    img = self.build_block(t, t)
 
-# blockAlloyGlass=230
-# Handled further up like regular glass, under no_inner_surfaces
+    return img
 
-# blockBarrel=217, Looks like regular wood
-block(blockid=217, top_index=20)
+#new ores (ruby, emerald, sapphire, etc)
+@material(blockid=[140,247,248,249], data=range(8), solid=True)
+def new_ores(self, blockid, data):
+    if blockid == 247: #uranium
+        t = self.ic2block0_images[34]
+    elif blockid == 248: #tin from ic2
+        t = self.ic2block0_images[33]
+    elif blockid == 249: #copper from ic2
+        t = self.ic2block0_images[32]        
+    elif data == 0: # ruby
+        t = self.rpworld_images[32]
+    elif data == 1: # emerald
+        t = self.rpworld_images[33]
+    elif data == 2: # sapphire
+        t = self.rpworld_images[34]
+    elif data == 3: # silver
+        t = self.rpworld_images[35]
+    elif data == 4: # tin
+        t = self.rpworld_images[36]
+    elif data == 5: # copper
+        t = self.rpworld_images[37]
+    elif data == 6: # tungsten
+        t = self.rpworld_images[38]
+    elif data == 7: # nikolite
+        t = self.rpworld_images[39]
 
-# blockCable=228
-block(blockid=228, top_index=22)
+    img = self.build_block(t, t)
 
-# blockCrop=218, should handle like regular crops if everything goes well
-# block(blockid=218, top_index=22) <- use this instead if the stuff further up fails
+    return img
 
-# blockDoorAlloy=229, handle like regular doors further up
-# block(blockid=229, top_index=22)
+#new ore blocks (ruby, emerald, sapphire)
+@material(blockid=[145,224], data=range(10), solid=True)
+def new_ores_block(self, blockid, data):
+    if blockid == 224 and data == 0: #copper block
+        t = s = self.ic2block0_images[93]
+    elif blockid == 224 and data == 1: #tin block
+        t = s = self.ic2block0_images[94]
+    elif blockid == 224 and data == 2: #bronze block
+        t = s = self.ic2block0_images[78]
+    elif blockid == 224 and data == 3: #uranium block
+        t = self.ic2block0_images[79]
+        s = self.ic2block0_images[95]
+    elif data == 0: # ruby
+        t = s = self.rpworld_images[80]
+    elif data == 1: # emerald
+        t = s = self.rpworld_images[81]
+    elif data == 2: # sapphire
+        t = s = self.rpworld_images[82]
+    else:
+        t = s = self.rpworld_images[82]        
 
-# blockDynamite=236, looks like TNT
-block(blockid=236, top_index=9, side_index=8, nospawn=True)
+    img = self.build_block(t, s)
+    return img
 
-# blockDynamiteRemote=235, looks like TNT sides
-block(blockid=235, top_index=10, nospawn=True)
+#alchemical chest and energy condensor
+#TODO: where does orientation data come from??
+@material(blockid=126, data=range(12), solid=True)
+def ee_chests(self, blockid, data):
+    if data == 0: #energy collector
+        t = self.ee_factory_images[11]
+        f = self.ee_factory_images[9]
+        s = self.ee_factory_images[10]
+    elif data == 1: #collector MK2
+        t = self.ee_factory_images[21]
+        f = self.ee_factory_images[9]
+        s = self.ee_factory_images[10]
+    elif data == 2: #collector MK3
+        t = self.ee_factory_images[22]
+        f = self.ee_factory_images[9]
+        s = self.ee_factory_images[10]
+    elif data == 3: #DM furnace
+        t = self.ee_factory_images[13]
+        f = self.ee_factory_images[12]
+        s = t.copy()
+    elif data == 4: #RM furnace
+        t = self.ee_factory_images[15]
+        f = self.ee_factory_images[14]
+        s = t.copy()
+    elif data == 5: #Antimatter relay
+        t = self.ee_factory_images[8]
+        f = self.ee_factory_images[6]
+        s = self.ee_factory_images[7]
+    elif data == 6: #Relay MK2
+        t = self.ee_factory_images[23]
+        f = self.ee_factory_images[6]
+        s = self.ee_factory_images[7]
+    elif data == 7: #Relay MK3
+        t = self.ee_factory_images[24]
+        f = self.ee_factory_images[6]
+        s = self.ee_factory_images[7]
+    elif data == 8: #DM block
+        t = self.ee_factory_images[13]
+        f = t.copy()
+        s = t.copy()
+    elif data == 9: #RM block
+        t = self.ee_factory_images[15]
+        f = t.copy()
+        s = t.copy()
+    elif data == 10: #nova catalyst
+        t = self.ee_factory_images[19]
+        f = self.ee_factory_images[17]
+        s = f.copy()
+    elif data == 11: #nova cataclysm
+        t = self.ee_factory_images[19]
+        f = self.ee_factory_images[18]
+        s = f.copy()        
+    else: #default energy collector for now
+        t = self.ee_factory_images[11]
+        f = self.ee_factory_images[9]
+        s = self.ee_factory_images[10]
+        
+    img = self.build_full_block(t,None,None,s,f)
+    return img
 
-# blockElectric=227
-block(blockid=227, top_index=22)
+#alchemical chest and energy condensor
+#TODO: where does orientation data come from??
+@material(blockid=128, data=range(2), solid=True)
+def ee_chests(self, blockid, data):
+    if data == 0: #alchemical chest
+        t = self.ee_factory_images[2]
+        f = self.ee_factory_images[0]
+        s = self.ee_factory_images[1]
+    elif data == 1: #energy condensor
+        t = self.ee_factory_images[5]
+        f = self.ee_factory_images[3]
+        s = self.ee_factory_images[4]
 
-# blockFenceIron=232, handl this like regular fences, further up
-# block(blockid=232, top_index=22)
+    img = self.build_full_block(t,None,None,s,f)
+    return img
 
-# blockFoam=222, looks like white wool
-block(blockid=222, top_index=64)
+#transmutation tablet
+@material(blockid=130, transparent=True, solid=True)
+def transmutation_tablet(self, blockid, data):
+    t = self.ee_factory_images[27]
+    s = self.ee_factory_images[25]
+    
+    #this should work but for some reason it looks funny
+    #img = self.build_full_block((t,12),s,s,s,s) #slightly smaller than half-block
+    
+    #stole this from the half slab work it looks way better
+    #cut the side texture in half
+    mask = s.crop((0,8,16,16))
+    s = Image.new(s.mode, s.size, self.bgcolor)
+    alpha_over(s, mask,(0,0,16,8), mask)
+    
+    t = self.transform_image_top(t)
+    s = self.transform_image_side(s)
+    otherside = s.transpose(Image.FLIP_LEFT_RIGHT)
+    
+    sidealpha = s.split()[3]
+    s = ImageEnhance.Brightness(s).enhance(0.9)
+    s.putalpha(sidealpha)
+    othersidealpha = otherside.split()[3]
+    otherside = ImageEnhance.Brightness(otherside).enhance(0.8)
+    otherside.putalpha(othersidealpha)
+    
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    alpha_over(img, s, (0,12), s)
+    alpha_over(img, otherside, (12,12), otherside)
+    alpha_over(img, t, (0,6), t)
+        
+    return img
 
-# blockGenerator=246
-block(blockid=246, top_index=22)
+#redpower machines (blulectric)
+#todo: different front when some of these are on also orientation
+@material(blockid=137, data=range(5), solid=True)
+def blulectric_machines(self, blockid, data):
+    if data == 0: #alloy furnace
+        t = self.rpbase1_images[19]
+        f = self.rpbase1_images[17]
+        s = self.rpbase1_images[16]
+    elif data == 1: #blulectric furnace
+        t = self.rpmachine1_images[83]
+        f = self.rpmachine1_images[81]
+        s = self.rpmachine1_images[80]
+    elif data == 2: #buffer
+        t = self.rpmachine1_images[89]
+        f = s = self.rpmachine1_images[88]
+    elif data == 3: #project table
+        t = self.rpbase1_images[32]
+        f = self.rpbase1_images[34]
+        s = self.rpbase1_images[33]    
+    elif data == 4: #blulectric alloy furnace
+        t = self.rpmachine1_images[163]
+        f = self.rpmachine1_images[161]
+        s = self.rpmachine1_images[160]
+    else:
+        t = self.rpbase1_images[19]
+        f = self.rpbase1_images[17]
+        s = self.rpbase1_images[16]
+        
+    img = self.build_full_block(t,None,None,s,f)
+    return img
 
-# blockHarz=240, looks like regular wood
-block(blockid=240, top_index=20)
+#redpower machines (control)
+#todo: different front when some of these are on also orientation
+@material(blockid=[133,134,148], data=range(3), transparent=True, solid=True)
+def control_machines(self, blockid, data):
+    if blockid == 133 and data == 0: #backplane (small)
+        t = self.rpcontrol1_images[18]
+        f = self.rpcontrol1_images[16]
+        s = self.rpcontrol1_images[17]    
+    elif blockid == 133 and data == 1: #8k ram module
+        t = self.rpcontrol1_images[34]
+        f = self.rpcontrol1_images[32]
+        s = self.rpcontrol1_images[33]    
+    elif blockid == 134 and data == 0: #monitor
+        t = self.rpcontrol1_images[21]
+        f = self.rpcontrol1_images[19]
+        s = self.rpcontrol1_images[20]    
+    elif blockid == 134 and data == 1: #cpu
+        t = self.rpcontrol1_images[21]
+        f = self.rpcontrol1_images[24]
+        s = self.rpcontrol1_images[20]        
+    elif blockid == 134 and data == 2: #disk drive
+        t = self.rpcontrol1_images[29]
+        f = self.rpcontrol1_images[25]
+        s = self.rpcontrol1_images[28]
+    elif blockid == 148: #io expander
+        t = self.rpcontrol1_images[48]
+        f = self.rpcontrol1_images[52]
+        s = self.rpcontrol1_images[49]
+    else:
+        t = self.rpcontrol1_images[21]
+        f = self.rpcontrol1_images[19]
+        s = self.rpcontrol1_images[20]    
+        
+    if blockid == 133 and data == 0: #small backplane
+        img = self.build_full_block((t,14),None,None,s,f)
+    elif blockid == 148: #io expander half size
+        img = self.build_full_block((t,8),None,None,s,f)
+    else:
+        img = self.build_full_block(t,None,None,s,f)
+        
+    return img
 
-# blockITNT=239, looks like TNT
-block(blockid=239, top_index=9, side_index=8, nospawn=True)
+#redpower wire
+#@material(blockid=136, data=range(1024), transparent=True)
+#def wire(self, blockid, data):
+#
+#    if data & 0b1000000 == 64: # powered redstone wire
+#        redstone_wire_t = self.terrain_images[165]
+#        redstone_wire_t = self.tint_texture(redstone_wire_t,(255,0,0))
+#
+#        redstone_cross_t = self.terrain_images[164]
+#        redstone_cross_t = self.tint_texture(redstone_cross_t,(255,0,0))
+#
+#        
+#    else: # unpowered redstone wire
+#        redstone_wire_t = self.terrain_images[165]
+#        redstone_wire_t = self.tint_texture(redstone_wire_t,(48,0,0))
+#        
+#        redstone_cross_t = self.terrain_images[164]
+#        redstone_cross_t = self.tint_texture(redstone_cross_t,(48,0,0))
+#
+#    # generate an image per redstone direction
+#    branch_top_left = redstone_cross_t.copy()
+#    ImageDraw.Draw(branch_top_left).rectangle((0,0,4,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_top_left).rectangle((11,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_top_left).rectangle((0,11,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    
+#    branch_top_right = redstone_cross_t.copy()
+#    ImageDraw.Draw(branch_top_right).rectangle((0,0,15,4),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_top_right).rectangle((0,0,4,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_top_right).rectangle((0,11,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    
+#    branch_bottom_right = redstone_cross_t.copy()
+#    ImageDraw.Draw(branch_bottom_right).rectangle((0,0,15,4),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_bottom_right).rectangle((0,0,4,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_bottom_right).rectangle((11,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#
+#    branch_bottom_left = redstone_cross_t.copy()
+#    ImageDraw.Draw(branch_bottom_left).rectangle((0,0,15,4),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_bottom_left).rectangle((11,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#    ImageDraw.Draw(branch_bottom_left).rectangle((0,11,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+#            
+#    # generate the bottom texture
+#    if data & 0b111111 == 0:
+#        bottom = redstone_cross_t.copy()
+#    
+#    elif data & 0b1111 == 10: #= 0b1010 redstone wire in the x direction
+#        bottom = redstone_wire_t.copy()
+#        
+#    elif data & 0b1111 == 5: #= 0b0101 redstone wire in the y direction
+#        bottom = redstone_wire_t.copy().rotate(90)
+#    
+#    else:
+#        bottom = Image.new("RGBA", (16,16), self.bgcolor)
+#        if (data & 0b0001) == 1:
+#            alpha_over(bottom,branch_top_left)
+#            
+#        if (data & 0b1000) == 8:
+#            alpha_over(bottom,branch_top_right)
+#            
+#        if (data & 0b0010) == 2:
+#            alpha_over(bottom,branch_bottom_left)
+#            
+#        if (data & 0b0100) == 4:
+#            alpha_over(bottom,branch_bottom_right)
+#
+#    # check for going up redstone wire
+#    if data & 0b100000 == 32:
+#        side1 = redstone_wire_t.rotate(90)
+#    else:
+#        side1 = None
+#        
+#    if data & 0b010000 == 16:
+#        side2 = redstone_wire_t.rotate(90)
+#    else:
+#        side2 = None
+#        
+#    img = self.build_full_block(None,side1,side2,None,None,bottom)
+#
+#    return img
 
-# blockIronScaffold=216
-block(blockid=216, top_index=22)
+#indigo flower/rubber wood saplings
+@material(blockid=[139,241], data=range(3), transparent=True)
+def rpsprites(self, blockid, data):
+    if blockid == 241:
+        t = self.ic2block0_images[38]        
+    elif data == 0:
+        t = self.rpworlditems_images[1]
+    else:
+        t = self.rpworlditems_images[2]
+        
+    return self.build_sprite(t)
 
-# blockLuminator=226, looks like redstone lamp
-block(blockid=226, top_index=211)
+#ic2 and redpower leaves
+@material(blockid=[141,242], data=range(16), transparent=True, solid=True)
+def new_leaves(self, blockid, data):
+    if blockid == 141: #rubberwood rp
+        t = self.rpworld_images[48]
+    elif blockid == 242: #rubberwood ic2 - actually uses a default texture anyway
+        t = self.terrain_images[52]
 
-# blockLuminatorDark=219, looks like redstone lamp, off
-block(blockid=219, top_index=212)
+    return self.build_block(t, t)
 
-# blockMachine=250
-block(blockid=250, top_index=22)
-
-# blockMachine2=223
-block(blockid=223, top_index=22)
-
-# blockMetal=224
-block(blockid=224, top_index=22)
-
-# blockMiningPipe=245
-block(blockid=245, top_index=22)
-
-# blockMiningTip=244
-block(blockid=244, top_index=22)
-
-# blockNuke=237, looks like bedrock, for that extra warning sign
-block(blockid=237, top_index=17)
-
-# blockOreCopper=249
-block(blockid=249, top_index=22)
-
-# blockOreTin=248
-block(blockid=248, top_index=22)
-
-# blockOreUran=247
-block(blockid=247, top_index=22)
-
-# blockPersonal=225
-block(blockid=225, top_index=22)
-
-# blockReactorChamber=233
-block(blockid=233, top_index=22)
-
-# blockRubLeaves=242, handled further up as leaves
-# block(blockid=242, top_index=22)
-
-# blockRubSapling=241, handled further up as saplings
-# block(blockid=241, top_index=22)
-
-# blockRubWood=243, looks like jungle wood
-block(blockid=243, top_index=153)
-
-# blockRubber=234, looks like black wool
-block(blockid=234, top_index=113)
-
-# blockScaffold=220, looks like regular wooden planks
-block(blockid=220, top_index=4)
-
-# blockWall=221, looks like white wool. Thinking of handling this like wool, but can't find the data values for IC2
-block(blockid=221, top_index=64)
+#ic2 and redpower rubberwood
+@material(blockid=[143,243], data=range(6), solid=True)
+def new_rubberwood(self, blockid, data):
+    if blockid == 143: #rubberwood rp
+        t = self.rpworld_images[51]
+        s = self.rpworld_images[50]
+    elif blockid == 243: #rubberwood ic2
+        t = self.ic2block0_images[47]
+        s = self.ic2block0_images[46]
+        
+        if data == 5:
+            #todo orientation of the sticky resin
+            f = self.ic2block0_images[45]
+            return self.build_full_block(t,None,None,s,f)
+        
+    return self.build_block(t,s)
 
 
-# BUILDCRAFT BLOCKS START HERE
-# Iron Block texture (22) for everything by default, for now
+#lit lamps
+@material(blockid=[146,147], data=range(16), solid=True)
+def rp_lamps(self, blockid, data):
+    if blockid == 146:
+        t = self.rplighting1_images[32+data]
+    else:
+        t = self.rplighting1_images[16+data]
 
-# autoWorkbench.id=152, looks like crafting table
+    return self.build_block(t, t)
 
-# builder.id=157
-block(blockid=157, top_index=22)
+#redpower machines
+#todo: different front when some of these are on also orientation
+@material(blockid=150, data=range(16), solid=True)
+def rp_machines(self, blockid, data):
+    if data == 0: #deployer
+        t = self.rpmachine1_images[53]
+        f = self.rpmachine1_images[55]
+        s = self.rpmachine1_images[56]    
+    elif data == 1: #block breaker
+        t = self.rpmachine1_images[50]
+        f = s = self.rpmachine1_images[51]
+    elif data == 2: #transposer
+        t = self.rpmachine1_images[57]
+        f = s = self.rpmachine1_images[59]
+    elif data == 3: #filter
+        t = self.rpmachine1_images[57]
+        f = s = self.rpmachine1_images[61]
+    elif data == 4: #item detector
+        t = self.rpmachine1_images[103]
+        f = self.rpmachine1_images[105]
+        s = self.rpmachine1_images[106]    
+    elif data == 5: #sorting machine
+        t = self.rpmachine1_images[112]
+        f = s = self.rpmachine1_images[116]
+    elif data == 6: #battery box
+        t = self.rpmachine1_images[128]
+        f = s = self.rpmachine1_images[129]
+    elif data == 7: #frame motor
+        t = self.rpmachine1_images[151]
+        f = self.rpmachine1_images[144]
+        s = self.rpmachine1_images[155]    
+    elif data == 8: #retriever
+        t = self.rpmachine1_images[125]
+        f = s = self.rpmachine1_images[120]
+    elif data == 10: #regulator
+        t = self.rpmachine1_images[103]
+        f = self.rpmachine1_images[96]
+        s = self.rpmachine1_images[98]
+    elif data == 11: #thermopile
+        t = self.rpmachine1_images[140]
+        f = self.rpmachine1_images[139]
+        s = self.rpmachine1_images[138]    
+    elif data == 12: #igniter
+        t = self.rpmachine1_images[164]
+        f = self.rpmachine1_images[166]
+        s = self.rpmachine1_images[167]    
+    elif data == 13: #assembler
+        t = self.rpmachine1_images[168]
+        f = self.rpmachine1_images[170]
+        s = self.rpmachine1_images[171]    
+    elif data == 14: #ejector
+        t = self.rpmachine1_images[89]
+        f = self.rpmachine1_images[91]
+        s = self.rpmachine1_images[90]    
+    elif data == 15: #relay
+        t = self.rpmachine1_images[89]
+        f = self.rpmachine1_images[93]
+        s = self.rpmachine1_images[90]    
+    else:
+        t = self.rpmachine1_images[53]
+        f = self.rpmachine1_images[55]
+        s = self.rpmachine1_images[56]    
+        
+    img = self.build_full_block(t,None,None,s,f)
+        
+    return img
 
-# cobblestonePipe.id=159, looks like cobblestone. I'm gonna handle all pipes as if they're blocks made out of their base material
-block(blockid=233, top_index=1)
 
-# diamondPipe.id=149
-block(blockid=233, top_index=25)
+#more redpower machines
+#todo: different front when some of these are on also orientation
+@material(blockid=[151,152], data=range(4), transparent=True, solid=True)
+def more_rp_machines(self, blockid, data):
+    if blockid == 152: #support frame
+        t = f = s = self.rpmachine1_images[1]
+    elif data == 0: #solar panel
+        t = self.rpmachine1_images[85]
+        f = s = self.rpmachine1_images[86]
+    elif data == 1: #pump #TODO this needs work
+        t = self.rpmachine1_images[38]
+        f = self.rpmachine1_images[34]
+        s = self.rpmachine1_images[32]
+    elif data == 2: #accelerator #TODO this needs work
+        t = self.rpmachine1_images[16]
+        f = s = self.rpmachine1_images[18]
+    elif data == 3: #grate
+        t = f = s = self.rpmachine1_images[43]
 
-# dockingStation.id=168
-block(blockid=233, top_index=22)
+    if blockid == 151 and data == 0: #solar panels are smaller
+        img = self.build_full_block((t,13),None,None,s,f)
+    else:
+        img = self.build_full_block(t,None,None,s,f)        
+        
+    return img
 
-# drill.id=151
-block(blockid=233, top_index=22)
+    
+# using the redstone repeater as a starting point for wireless redstone
+#where is rotation info? diff states when powered
+#this needs some major TLC
+@material(blockid=177, data=range(3), transparent=True, nospawn=True)
+def wireless_redstone(self, blockid, data):
+    #self.codechickencore_images = self._split_terrain(self.load_image("codechicken/wirelessredstone/core/wireless1.png"))
+    #self.codechickenrp_images = self._split_terrain(self.load_image("codechicken/wirelessredstone/redpower/wireless1.png"))    
 
-# engine.id=161
-block(blockid=233, top_index=22)
+    # Masked to not clobber delay info
+    #if self.rotation == 1:
+    #    if (data & 0b0011) == 0: data = data & 0b1100 | 1
+    #    elif (data & 0b0011) == 1: data = data & 0b1100 | 2
+    #    elif (data & 0b0011) == 2: data = data & 0b1100 | 3
+    #    elif (data & 0b0011) == 3: data = data & 0b1100 | 0
+    #elif self.rotation == 2:
+    #    if (data & 0b0011) == 0: data = data & 0b1100 | 2
+    #    elif (data & 0b0011) == 1: data = data & 0b1100 | 3
+    #    elif (data & 0b0011) == 2: data = data & 0b1100 | 0
+    #    elif (data & 0b0011) == 3: data = data & 0b1100 | 1
+    #elif self.rotation == 3:
+    #    if (data & 0b0011) == 0: data = data & 0b1100 | 3
+    #    elif (data & 0b0011) == 1: data = data & 0b1100 | 0
+    #    elif (data & 0b0011) == 2: data = data & 0b1100 | 1
+    #    elif (data & 0b0011) == 3: data = data & 0b1100 | 2
+    
+    # generate the diode
+    top = self.codechickenrp_images[1]
+    side = self.codechickenrp_images[0]
+    increment = 13
 
-# filler.id=155
-block(blockid=233, top_index=22)
+    img = self.build_full_block( (top, increment), None, None, side, side)
+    
+    ##not sure if this is the same
+    if data  == 0: # wireless receiver
+        t = self.codechickencore_images[5]
+    elif data == 1: #wireless transmitter
+        t = self.codechickencore_images[3]        
+    elif data == 2: #wireless jammer
+        t = self.codechickencore_images[4]
+    else:
+        return
 
-# frame.id=160
-block(blockid=233, top_index=22)
+    #t = self.codechickencore_images[3]
+    
+    #if (data & 0x3) == 1: # pointing south
+    #    top = top.rotate(270)
+    #
+    #if (data & 0x3) == 2: # wireless jammer
+    #    top = top.rotate(180)
+    #
+    #if (data & 0x3) == 3: # pointing north
+    #    top = top.rotate(90)
+    
+    # compose a "3d" redstone torch
+    torch = Image.new("RGBA", (24,24), self.bgcolor)
+    
+    t_crop = t.crop((2,2,14,14))
+    slice = t_crop.copy()
+    ImageDraw.Draw(slice).rectangle((6,0,12,12),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(slice).rectangle((0,0,4,12),outline=(0,0,0,0),fill=(0,0,0,0))
+    
+    alpha_over(torch, slice, (6,4))
+    alpha_over(torch, t_crop, (5,5))
+    alpha_over(torch, t_crop, (6,5))
+    alpha_over(torch, slice, (6,6))
+    
+    # paste redstone torches everywhere!
+    # the torch is too tall for the repeater, crop the bottom.
+    ImageDraw.Draw(torch).rectangle((0,16,24,24),outline=(0,0,0,0),fill=(0,0,0,0))
+    
+    # touch up the 3d effect with big rectangles, just in case, for other texture packs
+    ImageDraw.Draw(torch).rectangle((0,24,10,15),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(torch).rectangle((12,15,24,24),outline=(0,0,0,0),fill=(0,0,0,0))
 
-# goldenPipe.id=148
-block(blockid=233, top_index=23)
+    static_torch = (-3,-1)    
+    alpha_over(img, torch, static_torch, torch) 
 
-# ironPipe.id=147
-block(blockid=233, top_index=22)
+    # torch positions for every redstone torch orientation.
+    #
+    # This is a horrible list of torch orientations. I tried to 
+    # obtain these orientations by rotating the positions for one
+    # orientation, but pixel rounding is horrible and messes the
+    # torches.
 
-# marker.id=154
-block(blockid=233, top_index=22)
+    #if (data & 0x3) == 0: # pointing east
+    #    #if (data & 0xC) == 0: # one tick delay
+    #        moving_torch = (1,1)
+        #    
+        #elif (data & 0xC) == 4: # two ticks delay
+        #    moving_torch = (2,2)
+        #    static_torch = (-3,-1)
+        #    
+        #elif (data & 0xC) == 8: # three ticks delay
+        #    moving_torch = (3,2)
+        #    static_torch = (-3,-1)
+        #    
+        #elif (data & 0xC) == 12: # four ticks delay
+        #    moving_torch = (4,3)
+        #    static_torch = (-3,-1)
+    
+    #elif (data & 0x3) == 1: # pointing south
+    #    #if (data & 0xC) == 0: # one tick delay
+    #        moving_torch = (1,1)
+    #        static_torch = (5,-1)
+            
+        #elif (data & 0xC) == 4: # two ticks delay
+        #    moving_torch = (0,2)
+        #    static_torch = (5,-1)
+        #    
+        #elif (data & 0xC) == 8: # three ticks delay
+        #    moving_torch = (-1,2)
+        #    static_torch = (5,-1)
+        #    
+        #elif (data & 0xC) == 12: # four ticks delay
+        #    moving_torch = (-2,3)
+        #    static_torch = (5,-1)
 
-# miningWell.id=150
-block(blockid=233, top_index=22)
+    #elif (data & 0x3) == 2: # pointing west
+    #    #if (data & 0xC) == 0: # one tick delay
+    #        moving_torch = (1,1)
+    #        static_torch = (5,3)
+            
+        #elif (data & 0xC) == 4: # two ticks delay
+        #    moving_torch = (0,0)
+        #    static_torch = (5,3)
+        #    
+        #elif (data & 0xC) == 8: # three ticks delay
+        #    moving_torch = (-1,0)
+        #    static_torch = (5,3)
+        #    
+        #elif (data & 0xC) == 12: # four ticks delay
+        #    moving_torch = (-2,-1)
+        #    static_torch = (5,3)
 
-# obsidianPipe.id=156
-block(blockid=233, top_index=37)
+    #elif (data & 0x3) == 3: # pointing north
+    #    #if (data & 0xC) == 0: # one tick delay
+    #        moving_torch = (1,1)
+    #        static_torch = (-3,3)
+            
+        #elif (data & 0xC) == 4: # two ticks delay
+        #    moving_torch = (2,0)
+        #    static_torch = (-3,3)
+        #    
+        #elif (data & 0xC) == 8: # three ticks delay
+        #    moving_torch = (3,0)
+        #    static_torch = (-3,3)
+        #    
+        #elif (data & 0xC) == 12: # four ticks delay
+        #    moving_torch = (4,-1)
+        #    static_torch = (-3,3)
+    
+    # this paste order it's ok for east and south orientation
+    # but it's wrong for north and west orientations. But using the
+    # default texture pack the torches are small enough to no overlap.
+    #alpha_over(img, torch, moving_torch, torch)
 
-# oilMoving.id=162, handled further up like colored moving water
+    return img
 
-# oilStill.id=163, handled further up like colored still water
 
-# pipe.id=166
-block(blockid=233, top_index=22)
+#bubbling crude
+@material(blockid=[162,163], data=range(16), fluid=True, transparent=False, nospawn=True)
+def oil(self, blockid, data):
+    t = self.bc_coreblock_images[205]
+    return self.build_block(t, t)
 
-# pump.id=164
-block(blockid=233, top_index=22)
+#ironchests
+#todo: different front on orientation
+@material(blockid=181, data=range(6), transparent=True, solid=True)
+def more_rp_machines(self, blockid, data):
+    t = self.ironchests_images[16*data+1]
+    f = self.ironchests_images[16*data+2]
+    s = self.ironchests_images[16*data]
 
-# quarry.id=153
-block(blockid=233, top_index=22)
+    return self.build_full_block(t,None,None,s,f)        
 
-# refinery.id=167
-block(blockid=233, top_index=22)
 
-# stonePipe.id=146
-block(blockid=233, top_index=0)
+#solar arrays
+@material(blockid=183, data=range(3), solid=True)
+def solar_arrays(self, blockid, data):
+    t = self.compactsolar_images[16*data+1]
+    s = self.compactsolar_images[16*data]
 
-# tank.id=165, handled further up like glass
+    return self.build_block(t,s)
 
-# template.id=158
-block(blockid=233, top_index=22)
 
-# woodenPipe.id=145
-block(blockid=233, top_index=4)
+#charging benchs
+@material(blockid=187, data=range(3), solid=True)
+def charging_bench(self, blockid, data):
+    t = self.ic2bench_images[16+data]
+    f = self.ic2bench_images[32+data]
+    s = self.ic2bench_images[48+data]
+
+    return self.build_full_block(t,None,None,s,f)
+
+#industrial stuff for lack of a better term
+#TODO clean up smaller alarms
+@material(blockid=192, data=range(6), transparent=True, solid=True)
+def industrial_stuff(self, blockid, data):
+    if data == 0: #thermal monitor
+        t = self.thermo_images[0]
+        s = self.thermo_images[17]
+    elif data == 1: #industrial alarm
+        t = self.thermo_images[3]
+        s = self.thermo_images[5]
+    elif data == 2: #howler alarm
+        t = self.thermo_images[7]
+        s = self.thermo_images[9]
+    elif data == 3: #remote thermal monitor
+        t = self.thermo_images[25]
+        s = self.thermo_images[24]
+    elif data == 4: #industrial info panel
+        t = self.thermo_images[80]
+        s = self.thermo_images[24]
+    elif data == 5: #info panel extender
+        t = self.thermo_images[80]
+        s = self.thermo_images[40]
+    
+    if data == 0:
+        # cut the side texture in half
+        mask = s.crop((0,8,16,16))
+        s = Image.new(s.mode, s.size, self.bgcolor)
+        alpha_over(s, mask,(0,0,16,8), mask)
+
+        c_left = (2,12)
+        c_right = (11,12)
+        c_top = (0,6)
+        
+        img = Image.new("RGBA", (24,24), self.bgcolor)
+        
+        tmp = self.transform_image_side(s).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over (img, tmp, c_right,tmp) # right side
+        tmp = tmp.transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over (img, tmp, c_left,tmp) # left side
+        tmp = self.transform_image_top(t)
+        alpha_over(img, tmp, c_top,tmp)
+        return img
+    elif data in [1,2]:
+        # cut the side texture in half
+        mask = s.crop((0,8,16,16))
+        s = Image.new(s.mode, s.size, self.bgcolor)
+        alpha_over(s, mask,(0,0,16,8), mask)
+
+        c_left = (2,12)
+        c_right = (10,12)
+        c_top = (0,6)
+        
+        img = Image.new("RGBA", (24,24), self.bgcolor)
+        
+        tmp = self.transform_image_side(s).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over (img, tmp, c_right,tmp) # right side
+        tmp = tmp.transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over (img, tmp, c_left,tmp) # left side
+        tmp = self.transform_image_top(t)
+        alpha_over(img, tmp, c_top,tmp)
+        return img
+    
+    return self.build_full_block(t,None,None,s,s)
+
+
+#tubestuff
+@material(blockid=194, data=range(6), solid=True)
+def tubestuff_blocks(self, blockid, data):
+    if data == 0: #buffer
+        t = s = self.tubestuff_images[3]
+    elif data == 1: #auto craft MK2
+        t = self.tubestuff_images[0]
+        s = self.tubestuff_images[2]
+    elif data == 2: #black hole chest
+        t = s = self.tubestuff_images[4]
+    elif data == 3: #incinerator
+        t = self.tubestuff_images[7]
+        s = self.tubestuff_images[6]
+    elif data == 4: #duplicator
+        t = s = self.tubestuff_images[8]
+    elif data == 5: #retrievulator
+        t = self.tubestuff_images[9]
+        s = self.tubestuff_images[10]
+
+    return self.build_block(t,s)
+
+#railcraft tracks - there's a lot of these
+#need to look into powered state, rotation and curving of these
+#even the type of track comes from tileentities...
+#lots TODO here...
+@material(blockid=206, data=range(28), transparent=True)
+def railcraft_tracks(self, blockid, data):
+    #just simple for right now
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+
+    t = self.railtracks_images[1]
+
+    track = self.transform_image_top(t)
+    alpha_over(img, track, (0,12), track)
+    
+    #if data == 0: #boarding
+    #    t = self.railtracks_images[1]
+    #elif data == 1: #holding 
+    #    t = self.railtracks_images[5]
+    #elif data == 2: #one-way 
+    #    t = self.railtracks_images[17]
+    #elif data == 3: #control 
+    #    t = self.railtracks_images[100]
+    #elif data == 4: #launcher
+    #    t = self.railtracks_images[37]
+    #elif data == 5: #priming
+    #    t = self.railtracks_images[69]
+    #elif data == 6: #junction
+    #    t = self.railtracks_images[39]
+    #elif data == 7: #switch
+    #    t = self.railtracks_images[49]
+    #elif data == 8: #disembarking
+    #    t = self.railtracks_images[117]
+    #elif data == 9: #suspended
+    #    t = self.railtracks_images[253]
+    #elif data == 10: #gated one-way
+    #    #TODO: needs a gate above it too
+    #    t = self.railtracks_images[132]
+    #elif data == 11: #gated
+    #    #TODO: needs a gate above it too
+    #    t = self.railtracks_images[254]
+    #elif data == 12: #wooden
+    #    t = self.railtracks_images[22]
+    #elif data == 13: #wooden booster
+    #    t = self.railtracks_images[53]
+    #elif data == 14: #wooden junction
+    #    t = self.railtracks_images[38]
+    #elif data == 15: #wooden switch
+    #    t = self.railtracks_images[65]
+    #elif data == 16: #hs
+    #    t = self.railtracks_images[23]
+    #elif data == 17: #hs booster
+    #    t = self.railtracks_images[21]
+    #elif data == 18: #hs transition
+    #    t = self.railtracks_images[33]
+    #elif data == 19: #hs switch
+    #    t = self.railtracks_images[81]
+    #elif data == 20: #train boarding
+    #    t = self.railtracks_images[97]
+    #elif data == 21: #train holding
+    #    t = self.railtracks_images[149]
+    #elif data == 22: #coupler
+    #    t = self.railtracks_images[113]
+    #elif data == 23: #decoupler
+    #    t = self.railtracks_images[115]
+    #elif data == 24: #reinforced
+    #    t = self.railtracks_images[24]
+    #elif data == 25: #reinforced booster
+    #    t = self.railtracks_images[165]
+    #elif data == 26: #reinforced junction
+    #    t = self.railtracks_images[40]
+    #elif data == 27: #reinforced switch
+    #    t = self.railtracks_images[129]
+    
+    # first, do rotation
+    # Masked to not clobber powered rail on/off info
+    # Ascending and flat straight
+    #if self.rotation == 1:
+    #    if (data & 0b0111) == 0: data = data & 0b1000 | 1
+    #    elif (data & 0b0111) == 1: data = data & 0b1000 | 0
+    #    elif (data & 0b0111) == 2: data = data & 0b1000 | 5
+    #    elif (data & 0b0111) == 3: data = data & 0b1000 | 4
+    #    elif (data & 0b0111) == 4: data = data & 0b1000 | 2
+    #    elif (data & 0b0111) == 5: data = data & 0b1000 | 3
+    #elif self.rotation == 2:
+    #    if (data & 0b0111) == 2: data = data & 0b1000 | 3
+    #    elif (data & 0b0111) == 3: data = data & 0b1000 | 2
+    #    elif (data & 0b0111) == 4: data = data & 0b1000 | 5
+    #    elif (data & 0b0111) == 5: data = data & 0b1000 | 4
+    #elif self.rotation == 3:
+    #    if (data & 0b0111) == 0: data = data & 0b1000 | 1
+    #    elif (data & 0b0111) == 1: data = data & 0b1000 | 0
+    #    elif (data & 0b0111) == 2: data = data & 0b1000 | 4
+    #    elif (data & 0b0111) == 3: data = data & 0b1000 | 5
+    #    elif (data & 0b0111) == 4: data = data & 0b1000 | 3
+    #    elif (data & 0b0111) == 5: data = data & 0b1000 | 2
+    #if blockid == 66: # normal minetrack only
+    #    #Corners
+    #    if self.rotation == 1:
+    #        if data == 6: data = 7
+    #        elif data == 7: data = 8
+    #        elif data == 8: data = 6
+    #        elif data == 9: data = 9
+    #    elif self.rotation == 2:
+    #        if data == 6: data = 8
+    #        elif data == 7: data = 9
+    #        elif data == 8: data = 6
+    #        elif data == 9: data = 7
+    #    elif self.rotation == 3:
+    #        if data == 6: data = 9
+    #        elif data == 7: data = 6
+    #        elif data == 8: data = 8
+    #        elif data == 9: data = 7
+
+    #if blockid == 27: # powered rail
+    #    if data & 0x8 == 0: # unpowered
+    #        raw_straight = self.terrain_images[163]
+    #        raw_corner = self.terrain_images[112]    # they don't exist but make the code
+    #                                            # much simplier
+    #    elif data & 0x8 == 0x8: # powered
+    #        raw_straight = self.terrain_images[179]
+    #        raw_corner = self.terrain_images[112]    # leave corners for code simplicity
+    #    # filter the 'powered' bit
+    #    data = data & 0x7
+    #        
+    #elif blockid == 28: # detector rail
+    #    raw_straight = self.terrain_images[195]
+    #    raw_corner = self.terrain_images[112]    # leave corners for code simplicity
+    #    
+    #elif blockid == 66: # normal rail
+    #    raw_straight = self.terrain_images[128]
+    #    raw_corner = self.terrain_images[112]
+        
+    ## use transform_image to scale and shear
+    #if data == 0:
+    #    track = self.transform_image_top(raw_straight)
+    #    alpha_over(img, track, (0,12), track)
+    #elif data == 6:
+    #    track = self.transform_image_top(raw_corner)
+    #    alpha_over(img, track, (0,12), track)
+    #elif data == 7:
+    #    track = self.transform_image_top(raw_corner.rotate(270))
+    #    alpha_over(img, track, (0,12), track)
+    #elif data == 8:
+    #    # flip
+    #    track = self.transform_image_top(raw_corner.transpose(Image.FLIP_TOP_BOTTOM).rotate(90))
+    #    alpha_over(img, track, (0,12), track)
+    #elif data == 9:
+    #    track = self.transform_image_top(raw_corner.transpose(Image.FLIP_TOP_BOTTOM))
+    #    alpha_over(img, track, (0,12), track)
+    #elif data == 1:
+    #    track = self.transform_image_top(raw_straight.rotate(90))
+    #    alpha_over(img, track, (0,12), track)
+    #    
+    ##slopes
+    #elif data == 2: # slope going up in +x direction
+    #    track = self.transform_image_slope(raw_straight)
+    #    track = track.transpose(Image.FLIP_LEFT_RIGHT)
+    #    alpha_over(img, track, (2,0), track)
+    #    # the 2 pixels move is needed to fit with the adjacent tracks
+    #    
+    #elif data == 3: # slope going up in -x direction
+    #    # tracks are sprites, in this case we are seeing the "side" of 
+    #    # the sprite, so draw a line to make it beautiful.
+    #    ImageDraw.Draw(img).line([(11,11),(23,17)],fill=(164,164,164))
+    #    # grey from track texture (exterior grey).
+    #    # the track doesn't start from image corners, be carefull drawing the line!
+    #elif data == 4: # slope going up in -y direction
+    #    track = self.transform_image_slope(raw_straight)
+    #    alpha_over(img, track, (0,0), track)
+    #    
+    #elif data == 5: # slope going up in +y direction
+    #    # same as "data == 3"
+    #    ImageDraw.Draw(img).line([(1,17),(12,11)],fill=(164,164,164))
+        
+    return img
+
+#some weird railcraft blocks
+@material(blockid=209, data=range(11), transparent=True)
+def railcraft_controls(self, blockid, data):
+    if data == 1: #dual head block signal
+        t = self.railcraft_images[55]
+        f = self.railcraft_images[72].copy()
+        s = self.railcraft_images[55]
+    elif data == 2: #switch motor
+        #only set front - rest is drawn below
+        f = s = self.railcraft_images[42]
+    elif data == 3 or data == 10: #block sigal/distant signal
+        t = self.railcraft_images[55]
+        f = self.railcraft_images[71].copy()
+        s = self.railcraft_images[55]
+    elif data == 4: #switch lever
+        #only set front - rest is drawn below        
+        f = s = self.railcraft_images[42]
+    elif data in [0,5,6]:
+        #wooden/stone(concrete)/metal post - call fence routine from above
+        #metal color in tileentity
+        return fence(self,blockid,data)
+    elif data == 8 or data == 9: #signal receiver box
+        t = self.railcraft_images[120]
+        f = s = self.railcraft_images[88]
+    elif data == 9: #signal controller box
+        t = self.railcraft_images[119]
+        f = s = self.railcraft_images[88]
+    else:
+        return
+    
+    if data in [2,4]:
+        #alternate the colors to make it look closer
+        #maybe shrink these a little like below
+        white = self.railcraft_images[43]
+        red = self.railcraft_images[44]
+
+        white = white.crop((0,0,12,12))
+        red = red.crop((0,0,12,12))
+        
+        t = Image.new("RGBA", (24,24), self.bgcolor)        
+        alpha_over (t, white, (0,0), white)
+        alpha_over (t, white, (10,10), white)
+        alpha_over (t, red, (0,10), red)
+        alpha_over (t, red, (10,0), red)
+
+        return self.build_full_block((t,8),None,None,s,f)
+    elif data in [1,3,10]:
+        #TODO -add the color to these
+        #check status for actual color?
+        #shrink these down a bit
+        green = self.railcraft_images[57]
+        alpha_over (f, green, (0,0), green) # left side
+        if data == 1: #dual head block signal
+            red = self.railcraft_images[59]
+            red = red.transpose(Image.FLIP_TOP_BOTTOM)
+            alpha_over (f, red, (0,0), red)
+    elif data in [8,9]: #signal blocks are a little smaller
+        c_left = (2,6)
+        c_right = (10,6)
+        c_top = (0,0)
+        
+        img = Image.new("RGBA", (24,24), self.bgcolor)
+        
+        tmp = self.transform_image_side(s).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over (img, tmp, c_right,tmp) # right side
+        tmp = tmp.transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over (img, tmp, c_left,tmp) # left side
+        tmp = self.transform_image_top(t)
+        alpha_over(img, tmp, c_top,tmp)
+        return img
+    
+    return self.build_full_block(t,None,None,s,f)
+
+#railcraft_detectors
+#TODO orientation information
+@material(blockid=211, data=range(14), solid=True)
+def railcraft_detectors(self, blockid, data):
+    t = self.railcraft_images[15+(16*data)]
+    f = s = self.railcraft_images[13+(16*data)]
+
+    return self.build_full_block(t,None,None,s,f)
+
+# railcraft elevator track (vertical)
+# uesd the ladder code for most of this
+@material(blockid=212, data=[2, 3, 4, 5, 10, 11, 12, 13], transparent=True)
+def railcraft_elevator(self, blockid, data):
+
+    # first rotations
+    if self.rotation == 1:
+        if data == 2: data = 5
+        elif data == 3: data = 4
+        elif data == 4: data = 2
+        elif data == 5: data = 3
+        elif data == 10: data = 13
+        elif data == 11: data = 12
+        elif data == 12: data = 10
+        elif data == 13: data = 11
+    elif self.rotation == 2:
+        if data == 2: data = 3
+        elif data == 3: data = 2
+        elif data == 4: data = 5
+        elif data == 5: data = 4
+        elif data == 10: data = 11
+        elif data == 11: data = 10
+        elif data == 12: data = 13
+        elif data == 13: data = 12
+    elif self.rotation == 3:
+        if data == 2: data = 4
+        elif data == 3: data = 5
+        elif data == 4: data = 3
+        elif data == 5: data = 2
+        elif data == 10: data = 12
+        elif data == 11: data = 13
+        elif data == 12: data = 11
+        elif data == 13: data = 10
+
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    
+    if data < 10:
+        raw_texture = self.railtracks_images[85]
+    else:
+        raw_texture = self.railtracks_images[84]
+
+    if data == 5 or data == 13:
+        tex = self.transform_image_side(raw_texture)
+        alpha_over(img, tex, (0,6), tex)
+        return img
+    if data == 2 or data == 10:
+        tex = self.transform_image_side(raw_texture).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over(img, tex, (12,6), tex)
+        return img
+    if data == 3 or data == 11:
+        tex = self.transform_image_side(raw_texture).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over(img, tex, (0,0), tex)
+        return img
+    if data == 4 or data == 12:
+        tex = self.transform_image_side(raw_texture)
+        alpha_over(img, tex, (12,0), tex)
+        return img
+    
+#more railcraft blocks
+#TODO orientation data
+@material(blockid=213, data=range(16), solid=True)
+def railcraft_blocks(self, blockid, data):
+    if data == 0: #item loader
+        t = self.railcraft_images[10]
+        s = self.railcraft_images[11]
+    elif data == 1: #item unloader
+        t = self.railcraft_images[156]
+        s = self.railcraft_images[155]
+    elif data == 2: #adv item loader
+        t = self.railcraft_images[124]
+        s = self.railcraft_images[123]
+    elif data == 3: #liquid loader
+        t = self.railcraft_images[26]
+        s = self.railcraft_images[27]
+    elif data == 4: #liquid unloader
+        t = self.railcraft_images[28]
+        s = self.railcraft_images[27]
+    elif data == 5: #adv item unloader
+        t = self.railcraft_images[140]
+        s = self.railcraft_images[139]
+    elif data == 6: #cart dispenser
+        t = self.railcraft_images[108]
+        s = self.railcraft_images[107]
+    elif data == 7: #coke oven brick
+        #TODO check for furnace shape and draw door (iterate.c)
+        t = s = self.railcraft_images[170]
+    elif data == 8: #rolling machine
+        t = self.railcraft_images[188]
+        s = self.railcraft_images[187]
+    elif data == 9: #energy loader
+        t = self.railcraft_images[204]
+        s = self.railcraft_images[203]
+    elif data == 10: #energy unloader
+        t = self.railcraft_images[220]
+        s = self.railcraft_images[219]
+    elif data == 11: #feed station
+        t = self.railcraft_images[236]
+        s = self.railcraft_images[235]
+    elif data == 12: #blast furnace brick
+        #TODO check for furnace shape and draw door (iterate.c)
+        t = s = self.railcraft_images[215]
+    elif data == 13: #train dispenser
+        t = self.railcraft_images[233]
+        s = self.railcraft_images[232]
+    elif data == 14: #water tank siding
+        t = self.railcraft_images[214]
+        s = self.railcraft_images[213]
+    elif data == 15: #rock crusher
+        t = self.railcraft_images[5]
+        s = self.railcraft_images[4]
+    
+    return self.build_block(t,s)
+
+#railcraft misc
+#TODO orientation data
+@material(blockid=214, data=range(5), solid=True)
+def railcraft_misc(self, blockid, data):
+    if data == 0: #world anchor
+        t = self.railcraft_images[185]
+        s = self.railcraft_images[201]
+    elif data == 1: #concrete
+        t = s = self.railcraft_images[103]
+    elif data == 2: #steel block
+        t = s = self.railcraft_images[180]
+    elif data == 3: #infernal brick - same as blast furnace
+        t = s = self.railcraft_images[215]
+    elif data == 4: #crushed obsidian
+        t = s = self.railcraft_images[227]
+
+    return self.build_block(t,s)
+
+#ccSensors
+@material(blockid=215, data=range(2), solid=True)
+def cc_sensors(self, blockid, data):
+    if data == 0: #sensor
+        return torches(self,blockid,data)
+    elif data == 1: #sensor controller
+        t = self.ccsensors_images[16]
+        s = self.ccsensors_images[48]
+    else:
+        return
+    
+    return self.build_block(t,s)
+
+#luminator
+#blockLuminator=226
+#blockLuminatorDark=219
+@material(blockid=219, transparent=True, solid=True)
+def luminator(self, blockid, data):
+    t = s = self.ic2block0_images[31]
+    
+    img = self.build_full_block((t,13),None,None,s,s)
+    return img
+
+#scaffold
+@material(blockid=220, transparent=True, solid=True)
+def scaffold(self, blockid, data):
+    t = self.ic2block0_images[117]
+    s = self.ic2block0_images[116]
+
+    img = self.build_block(t,s)
+    return img
+
+#construction foam - hard
+@material(blockid=221, data=range(16), solid=True)
+def hard_foam(self, blockid, data):
+    t = s = self.ic2cable_images[208+data]
+
+    img = self.build_block(t,s)
+    return img
+
+#construction foam - new
+@material(blockid=222, transparent=True, solid=True)
+def new_foam(self, blockid, data):
+    t = s = self.ic2cable_images[178]
+    img = self.build_block(t,s)
+    return img
+
+#ic2 machine2 blocks
+@material(blockid=223, data=range(3), solid=True)
+def ic2_machine2(self, blockid, data):
+    if data == 0: #teleporter
+        t = self.ic2machine2_images[16]
+        s = self.ic2machine2_images[17]
+    elif data == 1: #tesla coil
+        t = s = self.ic2machine2_images[1]
+    elif data == 2: #cropmatron
+        t = self.ic2machine2_images[18]
+        s = self.ic2machine2_images[34]
+
+    img = self.build_block(t,s)
+    return img
+
+#ic2 personal blocks
+@material(blockid=225, data=range(3), solid=True)
+def ic2_personal(self, blockid, data):
+    t = self.ic2personal_images[16+data]
+    f = self.ic2personal_images[48+data]
+    s = self.ic2personal_images[32+data]
+
+    img = self.build_full_block(t,None,None,s,f)
+    return img
+
+#ic2 electric
+@material(blockid=227, data=range(7), solid=True)
+def ic2_electric(self, blockid, data):
+    t = self.ic2electric_images[16+data]
+    f = self.ic2electric_images[48+data]
+    s = self.ic2electric_images[32+data]
+
+    img = self.build_full_block(t,None,None,s,f)
+    return img
+
+#ic2 reinforced glass
+@material(blockid=230, transparent=True, solid=True)
+def reinforced_glass(self, blockid, data):
+    t = s = self.ic2block0_images[13]
+    
+    img = self.build_block(t,s)
+    return img
+
+#ic2 reinforced stone
+@material(blockid=231, solid=True)
+def reinforced_stone(self, blockid, data):
+    t = s = self.ic2block0_images[12]
+    
+    img = self.build_block(t,s)
+    return img
+
+#ic2 rubber sheet
+@material(blockid=234, transparent=True,  solid=True)
+def rubber_sheet(self, blockid, data):
+    t = s = self.ic2block0_images[40]
+    
+    img = self.build_full_block((t,13),None,None,s,s)
+    return img
+
+#ic2 iron scaffolding
+@material(blockid=235, transparent=True, solid=True)
+def iron_scaffolding(self, blockid, data):
+    t = self.ic2block0_images[133]
+    s = self.ic2block0_images[132]
+
+    img = self.build_block(t,s)
+    return img
+
+#ic2 nuke
+@material(blockid=237, solid=True)
+def nuke(self, blockid, data):
+    t = self.ic2block0_images[62]
+    s = self.ic2block0_images[63]
+
+    img = self.build_block(t,s)
+    return img
+
+#ic2 industrial tnt
+@material(blockid=239, solid=True)
+def ic2_itnt(self, blockid, data):
+    t = self.ic2block0_images[59]
+    s = self.ic2block0_images[60]
+
+    img = self.build_block(t,s)
+    return img
+
+#ic2 mining tip
+@material(blockid=244, solid=True)
+def mining_tip(self, blockid, data):
+    t = s = self.ic2block0_images[36]
+    img = self.build_block(t,s)
+    return img
+
+#ic2 mining pipe - used code from big fence part to draw pipe
+#worked out quite well :)
+@material(blockid=245, transparent=True, solid=True)
+def mining_pipe(self, blockid, data):    
+    fence_top = self.ic2block0_images[35].copy()
+    fence_side = self.ic2block0_images[35].copy()
+    fence_small_side = self.ic2block0_images[35].copy()
+    
+    # generate the textures of the fence
+    ImageDraw.Draw(fence_top).rectangle((0,0,5,15),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(fence_top).rectangle((10,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(fence_top).rectangle((0,0,15,5),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(fence_top).rectangle((0,10,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+
+    ImageDraw.Draw(fence_side).rectangle((0,0,5,15),outline=(0,0,0,0),fill=(0,0,0,0))
+    ImageDraw.Draw(fence_side).rectangle((10,0,15,15),outline=(0,0,0,0),fill=(0,0,0,0))
+
+    # Create the sides and the top of the big stick
+    fence_side = self.transform_image_side(fence_side)
+    fence_other_side = fence_side.transpose(Image.FLIP_LEFT_RIGHT)
+    fence_top = self.transform_image_top(fence_top)
+
+    # Darken the sides slightly. These methods also affect the alpha layer,
+    # so save them first (we don't want to "darken" the alpha layer making
+    # the block transparent)
+    sidealpha = fence_side.split()[3]
+    fence_side = ImageEnhance.Brightness(fence_side).enhance(0.9)
+    fence_side.putalpha(sidealpha)
+    othersidealpha = fence_other_side.split()[3]
+    fence_other_side = ImageEnhance.Brightness(fence_other_side).enhance(0.8)
+    fence_other_side.putalpha(othersidealpha)
+
+    # Compose the fence big stick
+    fence_big = Image.new("RGBA", (24,24), self.bgcolor)
+    alpha_over(fence_big,fence_side, (5,4),fence_side)
+    alpha_over(fence_big,fence_other_side, (7,4),fence_other_side)
+    alpha_over(fence_big,fence_top, (0,0),fence_top)
+
+    # Create img to compose the fence
+    img = Image.new("RGBA", (24,24), self.bgcolor)        
+    alpha_over(img,fence_big,(0,0),fence_big)
+    
+    return img
+
+#ic2 generators
+#TODO orientation
+@material(blockid=246, data=range(6), solid=True)
+def ic2_generators(self, blockid, data):
+    t = self.ic2generator_images[16+data]
+    f = self.ic2generator_images[48+data]
+    s = self.ic2generator_images[32+data]
+
+    if data == 4:
+        f = self.ic2generator_images[68]
+        
+    img = self.build_full_block(t,None,None,s,f)
+    return img
+
+#ic2 reactor chamber
+@material(blockid=233, solid=True)
+def reactor_chamber(self, blockid, data):
+    t = self.ic2generator_images[20]
+    s = self.ic2generator_images[21]
+
+    img = self.build_block(t,s)
+    return img
+
+#ic2 machine blocks
+@material(blockid=250, data=range(16), solid=True)
+def ic2_machine(self, blockid, data):
+    t = self.ic2machine_images[16+data]
+    f = self.ic2machine_images[48+data]
+    s = self.ic2machine_images[32+data]
+
+    img = self.build_full_block(t,None,None,s,f)
+    return img
+
+#ic2 advanced machine blocks
+@material(blockid=188, data=range(3), solid=True)
+def ic2_advmachine(self, blockid, data):
+    t = self.ic2advmachine_images[16+data]
+    f = self.ic2advmachine_images[48+data]
+    s = self.ic2advmachine_images[32+data]
+
+    img = self.build_full_block(t,None,None,s,f)
+    return img
+
+#ic2 booze barrel
+#TODO add in treetap side
+@material(blockid=217, solid=True)
+def ic2_booze(self, blockid, data):
+    t = self.ic2block0_images[28]
+    s = self.ic2block0_images[44]
+    
+    img = self.build_block(t,s)
+    return img
+    
+#chunkloader world anchor
+@material(blockid=4095, solid=True)
+def chunkloader(self, blockid, data):
+    t = s = self.chunkloader_images[0]
+    img = self.build_block(t,s)
+    return img
+
+#computer craft blocks
+#TODO additional love needed for connected monitors and wireless modem
+#also computer rotation 2=north;5=east;3=south;4=west
+@material(blockid=[207,208], data=range(11), solid=True)
+def cc_blocks(self, blockid, data):
+    if blockid == 207: #computer
+        t = self.ccterrain_images[18]
+        f = self.ccterrain_images[16]
+        s = self.ccterrain_images[19]
+    elif blockid == 208 and data == 2: #disk drive
+        t = self.ccterrain_images[35]
+        f = self.ccterrain_images[32]
+        s = self.ccterrain_images[33]
+    elif blockid == 208 and data == 7: #wireless modem
+        t = self.ccterrain_images[48]
+        f = s = self.ccterrain_images[19]
+    elif blockid == 208 and data == 10: #monitor
+        t = self.ccterrain_images[80]
+        f = self.ccterrain_images[96]
+        s = self.ccterrain_images[84]        
+    else:
+        return
+    
+    if blockid == 208 and data == 7: #make wireless modem smaller for now
+        return self.build_full_block((t,8),None,None,s,f)
+
+    return self.build_full_block(t,None,None,s,f)
+
+#bc builders
+@material(blockid=[153,155,157,158,164,169,174,179], data=range(6), solid=True)
+def bc_builders(self, blockid, data):
+    #adjust orientation
+    if self.rotation == 1:
+        if data == 2: data = 5
+        elif data == 3: data = 4
+        elif data == 4: data = 2
+        elif data == 5: data = 3
+    elif self.rotation == 2:
+        if data == 2: data = 3
+        elif data == 3: data = 2
+        elif data == 4: data = 5
+        elif data == 5: data = 4
+    elif self.rotation == 3:
+        if data == 2: data = 4
+        elif data == 3: data = 5
+        elif data == 4: data = 3
+        elif data == 5: data = 2
+        
+    if blockid == 153: #quarry
+        t = self.bc_coreblock_images[40]
+        f = self.bc_coreblock_images[39]
+        s = self.bc_coreblock_images[41]
+    elif blockid == 155: #filler
+        t = self.bc_coreblock_images[65]
+        f = s = self.bc_coreblock_images[66]        
+    elif blockid == 157: #builder
+        t = self.bc_coreblock_images[54]
+        f = self.bc_coreblock_images[55]
+        s = self.bc_coreblock_images[53]
+    elif blockid == 158: #template
+        t = self.bc_coreblock_images[50]
+        f = self.bc_coreblock_images[52]
+        s = self.bc_coreblock_images[48]
+    elif blockid == 164: #pump
+        t = self.bc_coreblock_images[101]
+        f = s = self.bc_coreblock_images[99]
+    elif blockid == 169: #auto crafting table
+        t = self.bc_coreblock_images[43]
+        f = s = self.bc_coreblock_images[44]
+    elif blockid == 174: #mining well
+        t = self.bc_coreblock_images[36]
+        f = self.bc_coreblock_images[35]        
+        s = self.bc_coreblock_images[37]
+    elif blockid == 179: #teleport tether
+        t = f = s = self.bc_chunkloader_images[0]
+    else:
+        return
+    
+    if data == 3:
+        return self.build_full_block(t,None,None,s,f)
+    elif data == 4:
+        return self.build_full_block(t,None,None,f,s)
+    else:
+        return self.build_full_block(t,None,None,s,s)        
+
+#bc tank
+#type of liquid and amount in tileentity
+#could check_adjacent_blocks (iterate.c) and use diff texture if another block is above/below
+@material(blockid=165, transparent=True, solid=True)
+def bc_tank(self, blockid, data):
+    t = self.bc_coreblock_images[98]
+    s = self.bc_coreblock_images[96]
+    
+    c_left = (1,5)
+    c_right = (10,5)
+    c_top = (-1,0)
+    
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    
+    tmp = self.transform_image_side(s).transpose(Image.FLIP_LEFT_RIGHT)
+    alpha_over (img, tmp, c_right,tmp) # right side
+    tmp = tmp.transpose(Image.FLIP_LEFT_RIGHT)
+    alpha_over (img, tmp, c_left,tmp) # left side
+    tmp = self.transform_image_top(t)
+    alpha_over(img, tmp, c_top,tmp)
+    
+    return img
+
+#bc engines
+#TODO orientation comes from tileentity... ugh
+#these images are just loaded - _split_terrain not used so cropping in necessary
+#not a big deal as we're drawing these anyway
+#self.baseiron_images, self.basestone_images, self.basewood_images
+#self.trunkblue_images, self.trunkgreen_images, self.trunkred_images, self.trunkyellow_images
+@material(blockid=161, data=range(3), transparent=True, solid=True)
+def engines(self, blockid, data):
+    if data == 0: #redstone
+        base = self.basewood_images
+    elif data == 1: #steam
+        base = self.basestone_images
+    elif data == 2: #combustion 
+        base = self.baseiron_images
+    else:
+        return
+
+    #engine will be blue - need to get this from tileentity
+    engine = self.trunkblue_images
+    
+    #generate the base
+    side = base.crop((0,16,16,20))
+    side.load() # every crop need a load, crop is a lazy operation
+    base = base.crop((16,0,32,32))
+    base.load() # every crop need a load, crop is a lazy operation
+    t = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(t,base,(0,0))
+    s = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(s,side,(0,8))
+    alpha_over(s,side,(0,12))
+    
+
+    base = self.build_full_block((t,8),None, None, s, s)
+
+    #generate the engine part
+    engine = engine.crop((0,8,8,20))
+    engine.load() # every crop need a load, crop is a lazy operation
+    engine = engine.resize((16,16), Image.ANTIALIAS)
+    t = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(t,engine,(0,0))
+    engine = self.build_block(t,t)
+    engine = engine.resize((12,12),Image.ANTIALIAS)
+    
+    #compose the final block
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    alpha_over(img, base, (0,0), base)
+    alpha_over(img, engine, (6,4), engine)
+    
+    return img    
+   
+#bc refinery
+#these images are just loaded - _split_terrain not used so cropping in necessary
+#not a big deal as we're drawing these anyway
+@material(blockid=167, data=range(3), transparent=True, solid=True)
+def refinery(self, blockid, data):
+    #adjust orientation
+    if self.rotation == 1:
+        if data == 2: data = 5
+        elif data == 3: data = 4
+        elif data == 4: data = 2
+        elif data == 5: data = 3
+    elif self.rotation == 2:
+        if data == 2: data = 3
+        elif data == 3: data = 2
+        elif data == 4: data = 5
+        elif data == 5: data = 4
+    elif self.rotation == 3:
+        if data == 2: data = 4
+        elif data == 3: data = 5
+        elif data == 4: data = 3
+        elif data == 5: data = 2
+
+    refinery = self.refinery_images
+    
+    #create one tank
+    tank_top = Image.new("RGBA", (24,24), self.bgcolor)
+    t = refinery.copy()
+    t = t.crop((8,0,16,8))
+    t.load()
+    t = t.resize((10,10),Image.ANTIALIAS)
+    alpha_over(tank_top,t,(0,0),t)
+    
+    tank_side = Image.new("RGBA", (24,24), self.bgcolor)
+    s = refinery.copy()
+    s = s.crop((0,8,8,24))    
+    s.load()
+    s = s.resize((10,24),Image.ANTIALIAS)
+    alpha_over(tank_side,s,(0,0),s)
+    
+    c_left = (2,6)
+    c_right = (0,6)
+    c_top = (2,0)
+    
+    tank = Image.new("RGBA", (24,24), self.bgcolor)
+    tank_side = self.transform_image_side(tank_side)
+    os = tank_side.transpose(Image.FLIP_LEFT_RIGHT)
+    tank_top = self.transform_image_top(tank_top)
+    alpha_over(tank, tank_top, c_top,tank_top)
+    alpha_over(tank, tank_side, c_left,tank_side)
+    alpha_over(tank, os, c_right, os)
+    
+    #create the small box on the sides
+    box_top = Image.new("RGBA", (24,24), self.bgcolor)
+    t = refinery.copy()
+    t = t.crop((36,4,44,8))
+    t.load()
+    t = t.resize((8,8),Image.ANTIALIAS)
+    alpha_over(box_top,t,(0,0),t)
+    
+    box_front = Image.new("RGBA", (24,24), self.bgcolor)
+    f = refinery.copy()
+    f = f.crop((32,4,36,8))    
+    f.load()
+    f = f.resize((10,10),Image.ANTIALIAS)
+    alpha_over(box_front,f,(0,0),f)
+    
+    c_left = (8,10)
+    c_right = (4,9)
+    c_top = (-1,-1)
+    
+    #create the small box on the sides
+    box = Image.new("RGBA", (24,24), self.bgcolor)
+
+    box_side = self.transform_image_side(box_top)
+    box_top = box_top.rotate(90)
+    box_top = self.transform_image_top(box_top)
+    box_front = self.transform_image_side(box_front).transpose(Image.FLIP_LEFT_RIGHT)
+
+    #box_top = box_top.rotate(90)
+    alpha_over(box, box_top, c_top, box_top)
+    alpha_over(box, box_side, c_left,box_side)
+    alpha_over(box, box_front, c_right,box_front)    
+    
+    #create the final image
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    
+    #TODO: draw these with orientation in mind
+    alpha_over(img,tank,(6,-3),tank)
+    alpha_over(img,tank,(0,0),tank)
+    alpha_over(img,box,(7,4),box)
+    alpha_over(img,tank,(8,2),tank)
+    alpha_over(img,box,(0,8),box)
+    
+    return img 
+
+#bc mining pipe
+@material(blockid=171, transparent=True, solid=True)
+def mining_pipe(self, blockid, data):    
+    mining_pipe = self.bc_coreblock_images[32]
+
+    #create the mining pipe
+    pipe_top = Image.new("RGBA", (24,24), self.bgcolor)
+    t = mining_pipe.copy()
+    t = t.crop((4,4,12,12))
+    t.load()
+    t = t.resize((10,10),Image.ANTIALIAS)
+    alpha_over(pipe_top,t,(0,0),t)
+    
+    pipe_side = Image.new("RGBA", (24,24), self.bgcolor)
+    s = mining_pipe.copy()
+    s = s.crop((4,0,12,16))    
+    s.load()
+    s = s.resize((10,24),Image.ANTIALIAS)
+    alpha_over(pipe_side,s,(0,0),s)
+
+    c_left = (7,6)
+    c_right = (5,6)
+    c_top = (7,0)
+    
+    #compose the final block
+    full_pipe = Image.new("RGBA", (24,24), self.bgcolor)
+    pipe_side = self.transform_image_side(pipe_side)
+    os = pipe_side.transpose(Image.FLIP_LEFT_RIGHT)
+    pipe_top = self.transform_image_top(pipe_top)
+    alpha_over(full_pipe, pipe_top, c_top, pipe_top)
+    alpha_over(full_pipe, pipe_side, c_left,pipe_side)
+    alpha_over(full_pipe, os, c_right, os)
+    
+    return full_pipe
+
+#pipes/frame
+#TODO need to add logic to connect appropriate pipes in iterate.c
+#get pipe id from tileentity info
+@material(blockid=[160,166], data=range(64), transparent=True)
+def pipes(self, blockid, data):
+    if blockid == 160:
+        pipe = self.bc_coreblock_images[34]
+    else:
+        pipe = self.bc_coreblock_images[17]
+    
+    #create the middle box of the pipe
+    pipe_top = Image.new("RGBA", (24,24), self.bgcolor)
+    t = pipe.copy()
+    t = t.crop((4,4,12,12))
+    t.load()
+    t = t.resize((10,10),Image.ANTIALIAS)
+    alpha_over(pipe_top,t,(0,0),t)
+    
+    c_left = (7,6)
+    c_right = (5,6)
+    c_top = (7,0)
+    
+    #compose the middle block
+    middle_pipe = Image.new("RGBA", (24,24), self.bgcolor)
+    pipe_side = self.transform_image_side(pipe_top)
+    os = pipe_side.transpose(Image.FLIP_LEFT_RIGHT)
+    pipe_top = self.transform_image_top(pipe_top)
+    alpha_over(middle_pipe, pipe_top, c_top, pipe_top)
+    alpha_over(middle_pipe, pipe_side, c_left,pipe_side)
+    alpha_over(middle_pipe, os, c_right, os)
+    
+    pipe_side = Image.new("RGBA", (24,24), self.bgcolor)
+    s = pipe.copy()
+    s = s.crop((0,4,4,12))
+    s.load()
+    s = s.resize((6,10),Image.ANTIALIAS)
+    alpha_over(pipe_side,s,(0,0),s)
+
+    #compose the side_pipe
+    side_pipe = Image.new("RGBA", (24,24), self.bgcolor)
+    pipe_side = self.transform_image_side(pipe_side)
+    os = pipe_side.transpose(Image.FLIP_LEFT_RIGHT)
+    pipe_top = self.transform_image_top(pipe_side)
+    alpha_over(side_pipe, pipe_top, c_top, pipe_top)
+    alpha_over(side_pipe, pipe_side, c_left,pipe_side)
+    alpha_over(side_pipe, os, c_right, os)
+    
+    #compose the final block    
+    full_pipe = Image.new("RGBA", (24,24), self.bgcolor)
+
+    if (data & 0b000001) == 1: #south side
+        alpha_over(full_pipe,middle_pipe,(-4,2),middle_pipe)
+    if (data & 0b001000) == 8: #west
+        alpha_over(full_pipe,middle_pipe,(4,2),middle_pipe)
+    if (data & 0b010000) == 16: #below
+        alpha_over(full_pipe,middle_pipe,(0,6),middle_pipe)
+        
+    alpha_over(full_pipe,middle_pipe,(0,4),middle_pipe)
+
+    if (data & 0b000100) == 4: #north side
+        alpha_over(full_pipe,middle_pipe,(4,6),middle_pipe)
+    if (data & 0b000010) == 2: #east
+        alpha_over(full_pipe,middle_pipe,(-4,6),middle_pipe)
+    if (data & 0b100000) == 32: #above
+        alpha_over(full_pipe,middle_pipe,(0,-2),middle_pipe)
+    
+    return full_pipe
+
+#nether ores
+@material(blockid=135, data=range(8), solid=True)
+def nether_ores(self, blockid, data):
+    t = self.netherores_images[0+data]
+
+    img = self.build_block(t,t)
+    return img
+
+#power converter blocks
+@material(blockid=190, data=range(8), solid=True)
+def power_converters(self, blockid, data):
+    if data == 0: #LV engine generator
+        t = self.powerconvert_images[7]
+        s = self.powerconvert_images[8]
+    elif data == 1: #MV engine generator
+        t = self.powerconvert_images[13]
+        s = self.powerconvert_images[14]
+    elif data == 2: #HV engine generator
+        t = self.powerconvert_images[19]
+        s = self.powerconvert_images[20]
+    elif data == 3: #oil fabricator
+        t = self.powerconvert_images[25]
+        s = self.powerconvert_images[26]
+    elif data == 4: #energy link
+        t = self.powerconvert_images[30]
+        s = self.powerconvert_images[31]
+    elif data == 5: #lava fabricator
+        t = self.powerconvert_images[43]
+        s = self.powerconvert_images[44]
+    elif data == 6: #geothermal MK2
+        t = self.powerconvert_images[49]
+        s = self.powerconvert_images[50]
+    elif data == 7: #water strainer
+        t = self.powerconvert_images[73]
+        s = self.powerconvert_images[74]
+
+    img = self.build_block(t,s)
+    return img
+
+#modular forcefield system
+@material(blockid=253, data=range(10), solid=True)
+def mffs_machines(self, blockid, data):
+    t = self.mffsmachine_images[0+(16*data)]
+    s = self.mffsmachine_images[1+(16*data)]
+
+    img = self.build_block(t,s)
+    return img
+
+#modular forcefield system upgrades
+@material(blockid=254, data=range(9), solid=True)
+def mffs_upgrades(self, blockid, data):
+    t = self.mffsupgrade_images[1+(16*data)]
+    s = self.mffsupgrade_images[2+(16*data)]
+
+    img = self.build_block(t,s)
+    return img
+
+#ender chests (codechicken mod)
+#TODO: need to get and setup freq for these and display appropriately
+@material(blockid=178, data=range(8), transparent=True, solid=True)
+def enderstorage(self, blockid, data):
+    #adjust orientation
+    if self.rotation == 1:
+        if data == 2: data = 3
+        elif data == 0: data = 1
+        elif data == 1: data = 2
+        elif data == 3: data = 0
+    elif self.rotation == 2:
+        if data == 2: data = 0
+        elif data == 0: data = 2
+        elif data == 1: data = 3
+        elif data == 3: data = 1
+    elif self.rotation == 3:
+        if data == 2: data = 1
+        elif data == 0: data = 3
+        elif data == 1: data = 0
+        elif data == 3: data = 2
+        
+    t = self.codechickenender_images
+
+    # the textures is no longer in terrain.png, get it from 
+    # item/chest.png and get by cropping all the needed stuff
+    if t.size != (64,64): t = t.resize((64,64), Image.ANTIALIAS)
+    # top
+    top = t.crop((14,0,28,14))
+    top.load() # every crop need a load, crop is a lazy operation
+               # see PIL manual
+    img = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(img,top,(1,1))
+    top = img
+    # front
+    front_top = t.crop((14,14,28,19))
+    front_top.load()
+    front_bottom = t.crop((14,34,28,43))
+    front_bottom.load()
+    front_lock = t.crop((1,0,3,4))
+    front_lock.load()
+    front = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(front,front_top, (1,1))
+    alpha_over(front,front_bottom, (1,6))
+    alpha_over(front,front_lock, (7,3))
+    # left side
+    # left side, right side, and back are esentially the same for
+    # the default texture, we take it anyway just in case other
+    # textures make use of it.
+    side_l_top = t.crop((0,14,14,19))
+    side_l_top.load()
+    side_l_bottom = t.crop((0,34,14,43))
+    side_l_bottom.load()
+    side_l = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(side_l,side_l_top, (1,1))
+    alpha_over(side_l,side_l_bottom, (1,6))
+    # right side
+    side_r_top = t.crop((28,14,43,20))
+    side_r_top.load()
+    side_r_bottom = t.crop((28,33,42,43))
+    side_r_bottom.load()
+    side_r = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(side_r,side_l_top, (1,1))
+    alpha_over(side_r,side_l_bottom, (1,6))
+    # back
+    back_top = t.crop((42,14,56,18))
+    back_top.load()
+    back_bottom = t.crop((42,33,56,43))
+    back_bottom.load()
+    back = Image.new("RGBA", (16,16), self.bgcolor)
+    alpha_over(back,side_l_top, (1,1))
+    alpha_over(back,side_l_bottom, (1,6))
+        
+    # compose the final block
+    img = Image.new("RGBA", (24,24), self.bgcolor)
+    if data == 2: # north
+        side = self.transform_image_side(side_r)
+        alpha_over(img, side, (1,7))
+        back = self.transform_image_side(back)
+        alpha_over(img, back.transpose(Image.FLIP_LEFT_RIGHT), (11,7))
+        front = self.transform_image_side(front)
+        top = self.transform_image_top(top.rotate(180))
+        alpha_over(img, top, (0,2))
+
+    elif data == 0: # south
+        side = self.transform_image_side(side_l)
+        alpha_over(img, side, (1,7))
+        front = self.transform_image_side(front).transpose(Image.FLIP_LEFT_RIGHT)
+        top = self.transform_image_top(top.rotate(180))
+        alpha_over(img, top, (0,2))
+        alpha_over(img, front,(11,7))
+
+    elif data == 1: # west
+        side = self.transform_image_side(side_r)
+        alpha_over(img, side.transpose(Image.FLIP_LEFT_RIGHT), (11,7))
+        front = self.transform_image_side(front)
+        alpha_over(img, front,(1,7))
+        top = self.transform_image_top(top.rotate(270))
+        alpha_over(img, top, (0,2))
+
+    elif data == 3: # east
+        back = self.transform_image_side(back)
+        side = self.transform_image_side(side_l).transpose(Image.FLIP_LEFT_RIGHT)
+        alpha_over(img, side, (11,7))
+        alpha_over(img, back, (1,7))
+        top = self.transform_image_top(top.rotate(270))
+        alpha_over(img, top, (0,2))
+        
+    else: # just in case
+        return
+
+    return img
+        
