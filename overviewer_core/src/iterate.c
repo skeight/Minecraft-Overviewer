@@ -131,6 +131,7 @@ int load_chunk(RenderState* state, int x, int z, unsigned char required) {
     
     /* set up reasonable defaults */
     dest->biomes = NULL;
+    dest->tileentities = NULL;
     for (i = 0; i < SECTIONS_PER_CHUNK; i++)
     {
         dest->sections[i].blocks = NULL;
@@ -169,6 +170,9 @@ int load_chunk(RenderState* state, int x, int z, unsigned char required) {
     dest->biomes = PyDict_GetItemString(chunk, "Biomes");
     Py_INCREF(dest->biomes);
     
+    dest->tileentities = PyDict_GetItemString(chunk, "TileEntities");
+    Py_INCREF(dest->tileentities);
+    
     for (i = 0; i < PySequence_Fast_GET_SIZE(sections); i++) {
         PyObject *ycoord = NULL;
         int sectiony = 0;
@@ -195,6 +199,7 @@ unload_all_chunks(RenderState *state) {
         for (j = 0; j < 3; j++) {
             if (state->chunks[i][j].loaded) {
                 Py_XDECREF(state->chunks[i][j].biomes);
+                Py_XDECREF(state->chunks[i][j].tileentities);                
                 for (k = 0; k < SECTIONS_PER_CHUNK; k++) {
                     Py_XDECREF(state->chunks[i][j].sections[k].blocks);
                     Py_XDECREF(state->chunks[i][j].sections[k].data);
@@ -243,6 +248,46 @@ check_adjacent_blocks(RenderState *state, int x,int y,int z, unsigned short bloc
     return pdata;
 }
 
+unsigned char
+check_3d_adjacent_blocks(RenderState *state, int x,int y,int z, unsigned short blockid) {
+    /*
+     * Same as check_adjacent_blocks but adds an upper/lower bit
+     * for pipes
+     *
+     * This uses a binary number of 6 digits to encode the info:
+     *
+     * 0b123456:
+     * Bit:  1   2   3   4   5   6
+     * Side: +y  -y  +x  +z  -x  -z
+     * Values: bit = 0 -> The corresponding side block has different blockid
+     *         bit = 1 -> The corresponding side block has same blockid
+     * Example: if the bit1 is 1 that means that there is a block with 
+     * blockid in the side of the +x direction.
+     */
+        
+    unsigned char pdata=0;
+    
+    if (get_data(state, BLOCKS, x, y + 1, z) == blockid) {
+        pdata = pdata|(1 << 5);
+    }
+    if (get_data(state, BLOCKS, x, y - 1, z) == blockid) {
+        pdata = pdata|(1 << 4);
+    }        
+    if (get_data(state, BLOCKS, x + 1, y, z) == blockid) {
+        pdata = pdata|(1 << 3);
+    }        
+    if (get_data(state, BLOCKS, x, y, z + 1) == blockid) {
+        pdata = pdata|(1 << 2);
+    }
+    if (get_data(state, BLOCKS, x - 1, y, z) == blockid) {
+        pdata = pdata|(1 << 1);
+    }
+    if (get_data(state, BLOCKS, x, y, z - 1) == blockid) {
+        pdata = pdata|(1 << 0);
+    }
+    
+    return pdata;
+}
 
 unsigned char
 generate_pseudo_data(RenderState *state, unsigned char ancilData) {
@@ -365,7 +410,7 @@ generate_pseudo_data(RenderState *state, unsigned char ancilData) {
         /* return check adjacent blocks with air, bit inverted */
         return check_adjacent_blocks(state, x, y, z, 0) ^ 0x0f;
 
-    } else if ((state->block == 90) || (state->block == 113)) {
+    } else if ((state->block == 90) || (state->block == 113) || (state->block == 232)) {
         /* portal and nether brick fences */
         return check_adjacent_blocks(state, x, y, z, state->block);
 
@@ -402,8 +447,34 @@ generate_pseudo_data(RenderState *state, unsigned char ancilData) {
         } else {
             return check_adjacent_blocks(state, x, y, z, state->block);
         }
+    } else if (state->block == 166) { /* pipes */
+        // need to get type of pipe from tileentity here
+        return check_3d_adjacent_blocks(state, x, y, z, state->block);
+    } else if (state->block == 768) { /* redpower fixture/cage lamps */
+        return get_data(state, TILEENTITIES, x, y, z);
+    } else if (state->block == 2050) { /* factorization blocks */
+        return get_data(state, TILEENTITIES, x, y, z);
     }
-
+    
+    //} else if (state->block == 144) { /* skulls */
+        //data = get_data(state, TILEENTITIES, x, y, z);
+        //
+        ////ancilData values
+        ////0x1: On the floor (rotation is stored in the tile entity)
+        ////0x2: On a wall, facing north    0x3: On a wall, facing south
+        ////0x4: On a wall, facing east     0x5: On a wall, facing west
+        //if(ancilData == 1) { // on the floor
+        //    return data;
+        //} else if(ancilData == 2) { // wall: north
+        //    return data;
+        //} else if(ancilData == 4) { // wall: east
+        //    return data | 0xC;
+        //} else if(ancilData == 5) { // wall: west
+        //    return data | 0x4; 
+        //} else { // wall: south
+        //    return data | 0x8;
+        //}    
+    //}
 
     return 0;
 
@@ -549,7 +620,9 @@ chunk_render(PyObject *self, PyObject *args) {
                         (state.block == 71) || (state.block == 79) ||
                         (state.block == 85) || (state.block == 90) ||
                         (state.block == 101) || (state.block == 102) ||
-                        (state.block == 113) || (state.block == 139)) {
+                        (state.block == 113) || (state.block == 139) ||
+                        (state.block == 232) || (state.block == 166) ||
+                        (state.block == 768) || (state.block == 2050) ) {
                         ancilData = generate_pseudo_data(&state, ancilData);
                         state.block_pdata = ancilData;
                     } else {

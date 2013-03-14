@@ -94,6 +94,10 @@ base_draw(void *data, RenderState *state, PyObject *src, PyObject *mask, PyObjec
         state->block == 8 || state->block == 9 ||
         /* leaves */
         state->block == 18 ||
+        /* ic2 leaves */
+        state->block == 242 ||
+        /* minefactory leaves */
+        state->block == 3123 ||
         /* tallgrass, but not dead shrubs */
         (state->block == 31 && state->block_data != 0) ||
         /* pumpkin/melon stem, not fully grown. Fully grown stems
@@ -134,6 +138,14 @@ base_draw(void *data, RenderState *state, PyObject *src, PyObject *mask, PyObjec
                    birch foliage color is flipped XY-ways */
                 flip_xy = 1;
             }
+            break;
+        case 242:
+            /* leaves */
+            color_table = self->foliagecolor;
+            break;        
+        case 2132:
+            /* minefactory leaves */
+            color_table = self->foliagecolor;
             break;
         case 31:
             /* tall grass */
