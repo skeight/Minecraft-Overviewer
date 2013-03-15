@@ -159,7 +159,11 @@ get_lighting_color(RenderPrimitiveLighting *self, RenderState *state,
 
     /* special half-step handling, stairs handling */
     if (block == 44 || block == 53 || block == 67 || block == 108 || block == 109 || block == 114 ||
-        block == 128 || block == 134 || block == 135 || block == 136) {
+        block == 128 || block == 134 || block == 135 || block == 136 ||
+        block == 145 || block == 146 || block == 147 || block == 148 || block == 149 || block == 150 || block == 151 || block == 152 || block == 153 || block == 154 ||
+        block == 245 || block == 246 || block == 247 || block == 248 || block == 249 || block == 250 || block == 251 || block == 252 || block == 253 || block == 254 ||
+        block == 275 || block == 276 || block == 277 || block == 278 || block == 279 || block == 280 || block == 281 || block == 282 || block == 283 || block == 284
+        ) {
         unsigned int upper_block;
         
         /* stairs and half-blocks take the skylevel from the upper block if it's transparent */
@@ -170,7 +174,11 @@ get_lighting_color(RenderPrimitiveLighting *self, RenderState *state,
             upper_block = get_data(state, BLOCKS, x, y + upper_counter, z);
         } while (upper_block == 44 || upper_block == 53 || upper_block == 67 || upper_block == 108 ||
                  upper_block == 109 || upper_block == 114 || upper_block == 128 || upper_block == 134 ||
-                 upper_block == 135 || upper_block == 136);
+                 upper_block == 135 || upper_block == 136 ||
+                 upper_block == 145 || upper_block == 146 || upper_block == 147 || upper_block == 148 || upper_block == 149 || upper_block == 150 || upper_block == 151 || upper_block == 152 || upper_block == 153 || upper_block == 154 ||
+                 upper_block == 245 || upper_block == 246 || upper_block == 247 || upper_block == 248 || upper_block == 249 || upper_block == 250 || upper_block == 251 || upper_block == 252 || upper_block == 253 || upper_block == 254 ||
+                 upper_block == 275 || upper_block == 276 || upper_block == 277 || upper_block == 278 || upper_block == 279 || upper_block == 280 || upper_block == 281 || upper_block == 282 || upper_block == 283 || upper_block == 284
+                 );
         if (is_transparent(upper_block)) {
             skylevel = get_data(state, SKYLIGHT, x, y + upper_counter, z);
         } else {
