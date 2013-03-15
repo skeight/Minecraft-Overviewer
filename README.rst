@@ -3,6 +3,11 @@ Minecraft Overviewer  |Build Status|
 ====================
 By Andrew Brown and contributors (see CONTRIBUTORS.rst).
 
+Special Instructions for this Branch:
+    If you want to compile and use this branch you can follow the same instructions for the regular overviewer.
+    The only caveat is that you *HAVE* to use a texture pack or it will fail.
+    contrib/hackslashmine-0_6_4_2.zip is a compilation of the default textures for convenience
+
 Documentation:
     http://docs.overviewer.org
 
